@@ -1,28 +1,84 @@
-import pg from "pg"
+/**
+ * ============================================
+ * CẤU HÌNH TYPEORM DATASOURCE
+ * ============================================
+ * Thay thế cấu hình pg Pool bằng TypeORM DataSource.
+ * TypeORM sẽ tự động đồng bộ schema -> DB khi synchronize = true.
+ * Mọi câu lệnh SQL sẽ được ghi log ra console nhờ logging = true.
+ */
+
+import "reflect-metadata";
+import { DataSource } from "typeorm";
 import dotenv from "dotenv";
+
+// === Import tất cả Entities ===
+import { Cohort } from "../models/entitys/Cohort.js";
+import { Faculty } from "../models/entitys/Faculty.js";
+import { Major } from "../models/entitys/Major.js";
+import { Subject } from "../models/entitys/Subject.js";
+import { User } from "../models/entitys/User.js";
+import { RefreshToken } from "../models/entitys/RefreshToken.js";
+import { Document } from "../models/entitys/Document.js";
+import { Group } from "../models/entitys/Group.js";
+import { GroupMember } from "../models/entitys/GroupMember.js";
+import { DocumentLike } from "../models/entitys/DocumentLike.js";
+import { Bookmark } from "../models/entitys/Bookmark.js";
+import { DocumentView } from "../models/entitys/DocumentView.js";
+
 dotenv.config();
 
-const pool = new pg.Pool({
-    host: process.env.DB_HOST, // Địa chỉ server
-    port: process.env.DB_PORT, // Cổng PostgreSQL
-    database: process.env.DB_NAME, // Tên database
-    user: process.env.DB_USER, // Username
-    password: process.env.DB_PASSWORD, // Password
+/**
+ * AppDataSource - Kết nối chính tới PostgreSQL thông qua TypeORM.
+ *
+ * - type: "postgres"         → Sử dụng driver PostgreSQL
+ * - host/port/username/...   → Đọc từ file .env
+ * - synchronize: true        → Tự động đồng bộ schema Entity -> DB (chỉ dùng ở dev)
+ * - logging: true            → Ghi log tất cả SQL query ra console mỗi khi có request
+ * - entities: [...]          → Danh sách Entity classes để TypeORM quản lý
+ */
+export const AppDataSource = new DataSource({
+    type: "postgres",
+    host: process.env.DB_HOST,
+    port: parseInt(process.env.DB_PORT),
+    username: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
 
-    max: 20, // Số kết nối tối đa trong pool
-    idleTimeoutMillis: 30000, // Đóng kết nối nếu rảnh 30s
-    connectionTimeoutMillis: 2000, // Timeout khi kết nối
-})
+    // === synchronize: Tự động tạo/cập nhật bảng theo Entity (CHỈ DÙNG KHI DEV) ===
+    synchronize: true,
 
+    // === logging: Ghi log mọi câu lệnh SQL ra console ===
+    logging: true,
+
+    // === Danh sách tất cả các Entity trong hệ thống ===
+    entities: [
+        Cohort,
+        Faculty,
+        Major,
+        Subject,
+        User,
+        RefreshToken,
+        Document,
+        Group,
+        GroupMember,
+        DocumentLike,
+        Bookmark,
+        DocumentView,
+    ],
+});
+
+/**
+ * connectDB - Hàm khởi tạo kết nối TypeORM DataSource.
+ * Gọi hàm này trong server.js trước khi app.listen().
+ */
 export const connectDB = async () => {
     try {
-        const client = await pool.connect();
-        console.log("Kết nối thành công");
-        // mnếu kết nối thành công thì trả connection cho pool
-        client.release();
+        await AppDataSource.initialize();
+        console.log("✅ TypeORM: Kết nối PostgreSQL thành công!");
+        console.log("📋 TypeORM: Synchronize schema đã được bật (dev mode).");
+        console.log("📝 TypeORM: SQL Logging đã được bật.");
     } catch (error) {
-        console.log("Kết nối thất bại:", error.message);
+        console.error("❌ TypeORM: Kết nối thất bại:", error.message);
+        throw error;
     }
-}
-// xuất ra pool cho repo gọi và gửi truy vấn
-export { pool };
+};
