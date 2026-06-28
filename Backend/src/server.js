@@ -52,7 +52,7 @@ app.use("/api/v1/auth", authRouter);
 connectDB().then(() => {
     app.listen(PORT, () => {
         console.log(`🚀 Server đang chạy tại: http://localhost:${PORT}`);
-        console.log(`🌐 CORS: Đã cho phép http://localhost:5173`);
+        console.log(`🌐 CORS: Đã cho phép http://localhost:${process.env.FRONTEND_PORT}`);
     });
 }).catch((error) => {
     console.error("❌ Không thể khởi động server:", error.message);
