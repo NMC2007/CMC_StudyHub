@@ -12,18 +12,18 @@ import { DataSource } from "typeorm";
 import dotenv from "dotenv";
 
 // === Import tất cả Entities ===
-import { Cohort } from "../models/entitys/Cohort.js";
-import { Faculty } from "../models/entitys/Faculty.js";
-import { Major } from "../models/entitys/Major.js";
-import { Subject } from "../models/entitys/Subject.js";
-import { User } from "../models/entitys/User.js";
-import { RefreshToken } from "../models/entitys/RefreshToken.js";
-import { Document } from "../models/entitys/Document.js";
-import { Group } from "../models/entitys/Group.js";
-import { GroupMember } from "../models/entitys/GroupMember.js";
-import { DocumentLike } from "../models/entitys/DocumentLike.js";
-import { Bookmark } from "../models/entitys/Bookmark.js";
-import { DocumentView } from "../models/entitys/DocumentView.js";
+import { Cohort } from "#models/entitys/Cohort.js";
+import { Faculty } from "#models/entitys/Faculty.js";
+import { Major } from "#models/entitys/Major.js";
+import { Subject } from "#models/entitys/Subject.js";
+import { User } from "#models/entitys/User.js";
+import { RefreshToken } from "#models/entitys/RefreshToken.js";
+import { Document } from "#models/entitys/Document.js";
+import { Group } from "#models/entitys/Group.js";
+import { GroupMember } from "#models/entitys/GroupMember.js";
+import { DocumentLike } from "#models/entitys/DocumentLike.js";
+import { Bookmark } from "#models/entitys/Bookmark.js";
+import { DocumentView } from "#models/entitys/DocumentView.js";
 
 dotenv.config();
 
@@ -45,10 +45,10 @@ export const AppDataSource = new DataSource({
     database: process.env.DB_NAME,
 
     // === synchronize: Tự động tạo/cập nhật bảng theo Entity (CHỈ DÙNG KHI DEV) ===
-    synchronize: true,
+    synchronize: process.env.DB_SYNCHRONIZE === "true",
 
     // === logging: Ghi log mọi câu lệnh SQL ra console ===
-    logging: true,
+    logging: process.env.DB_LOGGING === "true",
 
     // === Danh sách tất cả các Entity trong hệ thống ===
     entities: [

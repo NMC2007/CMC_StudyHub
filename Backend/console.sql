@@ -22,6 +22,7 @@ CREATE TABLE cohorts (
 -- Bảng Khoa
 CREATE TABLE faculties (
                            id SERIAL PRIMARY KEY,
+                           code VARCHAR(30) UNIQUE NOT NULL,
                            name VARCHAR(100) NOT NULL,
                            description TEXT
 );
@@ -29,6 +30,7 @@ CREATE TABLE faculties (
 -- Bảng Ngành học
 CREATE TABLE majors (
                         id SERIAL PRIMARY KEY,
+                        code VARCHAR(30) UNIQUE NOT NULL,
                         faculty_id INT NOT NULL REFERENCES faculties(id) ON DELETE CASCADE,
                         name VARCHAR(100) NOT NULL,
                         description TEXT
@@ -150,3 +152,56 @@ CREATE TABLE document_views (
                                 document_id INT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
                                 viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+
+
+-- ==========================================
+-- SEED DATA: COHORTS
+-- ==========================================
+
+INSERT INTO cohorts (code, name, start_year, end_year)
+VALUES
+    ('K1', 'Khóa 1', 2021, 2025),
+    ('K2', 'Khóa 2', 2022, 2026),
+    ('K3', 'Khóa 3', 2023, 2027),
+    ('K4', 'Khóa 4', 2025, 2029)
+ON CONFLICT (code) DO NOTHING;
+
+-- ==========================================
+-- SEED DATA: FACULTIES
+-- ==========================================
+
+INSERT INTO faculties (code, name, description)
+VALUES
+    (
+        'CNTT',
+        'Công nghệ thông tin và truyền thông',
+        'Đào tạo các ngành thuộc lĩnh vực Công nghệ thông tin và Truyền thông'
+    )
+ON CONFLICT (code) DO NOTHING;
+
+-- ==========================================
+-- SEED DATA: MAJORS
+-- ==========================================
+
+INSERT INTO majors (code, faculty_id, name, description)
+VALUES
+    (
+        'BIT',
+        (SELECT id FROM faculties WHERE code = 'CNTT'),
+        'Công nghệ thông tin',
+        'Bachelor of Information Technology'
+    ),
+    (
+        'BCS',
+        (SELECT id FROM faculties WHERE code = 'CNTT'),
+        'Khoa học máy tính',
+        'Bachelor of Computer Science'
+    ),
+    (
+        'BAI',
+        (SELECT id FROM faculties WHERE code = 'CNTT'),
+        'Trí tuệ nhân tạo',
+        'Bachelor of Artificial Intelligence'
+    )
+ON CONFLICT (code) DO NOTHING;

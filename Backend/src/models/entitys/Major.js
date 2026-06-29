@@ -23,6 +23,13 @@ export const Major = new EntitySchema({
             primary: true,
             generated: true,
         },
+        // === Mã ngành (VD: BIT, SE) - Unique ===
+        code: {
+            type: "varchar",
+            length: 30,
+            unique: true,
+            nullable: false,
+        },
         // === Tên ngành (VD: Kỹ thuật Phần mềm) ===
         name: {
             type: "varchar",

@@ -5,16 +5,21 @@
  * Cấu hình:
  *   - Express: Middleware xử lý JSON, URL-encoded
  *   - CORS: Cho phép Frontend (port 5173) truy cập API
+ *   - Cookie Parser: Parse cookie từ request
+ *   - Static Files: Serve file tĩnh từ thư mục /public
  *   - TypeORM: Kết nối PostgreSQL, synchronize schema, ghi log SQL
  *   - Routes: Đăng ký các router theo tiền tố /api/v1/*
+ *   - Global Error Handler: Bắt lỗi tập trung ở cuối chuỗi middleware
  */
 
 import "reflect-metadata";
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import { connectDB } from "./config/db.js";
 import authRouter from "./routes/authRouters.js";
+import { errorHandler } from "./advice/errorHandler.js";
 
 // === Load biến môi trường từ file .env ===
 dotenv.config();
@@ -35,14 +40,28 @@ app.use(cors({
     allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
+// === Middleware parse cookie từ request ===
+app.use(cookieParser());
+
 // === Middleware parse request body ===
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+// === Serve file tĩnh (avatar, tài liệu) từ thư mục /public ===
+app.use(express.static("public"));
 
 // ==========================================
 // ĐĂNG KÝ ROUTES
 // ==========================================
 app.use("/api/v1/auth", authRouter);
+
+// ==========================================
+// GLOBAL ERROR HANDLER
+// ==========================================
+// Phải đặt SAU tất cả routes.
+// Bắt mọi lỗi không xử lý được ở Controller/Service.
+// Trả response chuẩn APIResponse, ngăn server bị crash.
+app.use(errorHandler);
 
 // ==========================================
 // KHỞI ĐỘNG SERVER VỚI TYPEORM

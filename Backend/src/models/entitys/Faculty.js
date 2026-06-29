@@ -22,6 +22,13 @@ export const Faculty = new EntitySchema({
             primary: true,
             generated: true,
         },
+        // === Mã khoa (VD: CNTT, KT) - Unique ===
+        code: {
+            type: "varchar",
+            length: 30,
+            unique: true,
+            nullable: false,
+        },
         // === Tên khoa (VD: Khoa Công nghệ Thông tin) ===
         name: {
             type: "varchar",

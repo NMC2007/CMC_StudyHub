@@ -1,0 +1,224 @@
+### =========================================================================
+### STUDYHUB AUTHENTICATION TESTING SUITE (.http file format)
+### Sử dụng với VS Code Extension: REST Client hoặc Thunder Client / Postman.
+### =========================================================================
+
+@baseUrl = http://localhost:8081/api/v1/auth
+@contentType = application/json
+
+### -------------------------------------------------------------------------
+### BƯỚC 0: CHUẨN BỊ DỮ LIỆU MẪU (SQL SEED)
+### Chạy các câu lệnh SQL dưới đây trong database của bạn (studyhubdb)
+### để tránh lỗi khi đăng ký STUDENT hoặc LECTURER theo Business Code:
+###
+### INSERT INTO cohorts (code, name, start_year, end_year) VALUES ('K1', 'Khóa 1', 2023, 2027) ON CONFLICT DO NOTHING;
+### INSERT INTO faculties (code, name, description) VALUES ('CNTT', 'Khoa Công nghệ thông tin', 'Khoa CNTT') ON CONFLICT DO NOTHING;
+### INSERT INTO majors (code, faculty_id, name, description) VALUES ('BIT', 1, 'Kỹ thuật phần mềm', 'Ngành lập trình') ON CONFLICT DO NOTHING;
+### -------------------------------------------------------------------------
+
+
+### =========================================================================
+### 1. ĐĂNG KÝ TÀI KHOẢN (POST /register)
+### =========================================================================
+
+### 1.1 Đăng ký sinh viên CNTT (STUDENT - K1, CNTT, BIT)
+POST {{baseUrl}}/register
+Content-Type: {{contentType}}
+
+{
+  "full_name": "Nguyễn Văn Sinh Viên CNTT",
+  "username": "sinhvienbit",
+  "email": "sinhvienbit@studyhub.edu.vn",
+  "phone": "0912345671",
+  "dob": "2003-05-20",
+  "password": "Sinhvien@123",
+  "role": "STUDENT",
+  "cohort_code": "K1",
+  "faculty_code": "CNTT",
+  "major_code": "BIT"
+}
+
+### 1.2 Đăng ký sinh viên Khoa học máy tính (STUDENT - K2, CNTT, BCS)
+POST {{baseUrl}}/register
+Content-Type: {{contentType}}
+
+{
+  "full_name": "Trần Văn Khoa Học Máy Tính",
+  "username": "sinhvienbcs",
+  "email": "sinhvienbcs@studyhub.edu.vn",
+  "phone": "0912345672",
+  "dob": "2004-08-15",
+  "password": "Sinhvien@123",
+  "role": "STUDENT",
+  "cohort_code": "K2",
+  "faculty_code": "CNTT",
+  "major_code": "BCS"
+}
+
+### 1.3 Đăng ký sinh viên Trí tuệ nhân tạo (STUDENT - K3, CNTT, BAI)
+POST {{baseUrl}}/register
+Content-Type: {{contentType}}
+
+{
+  "full_name": "Lê Thị Trí Tuệ Nhân Tạo",
+  "username": "sinhvienbai",
+  "email": "sinhvienbai@studyhub.edu.vn",
+  "phone": "0912345673",
+  "dob": "2005-10-10",
+  "password": "Sinhvien@123",
+  "role": "STUDENT",
+  "cohort_code": "K3",
+  "faculty_code": "CNTT",
+  "major_code": "BAI"
+}
+
+### 1.4 Đăng ký giảng viên hợp lệ (LECTURER - CNTT)
+POST {{baseUrl}}/register
+Content-Type: {{contentType}}
+
+{
+  "full_name": "Trần Thị Giảng Viên",
+  "username": "giangvienit",
+  "email": "giangvienit@studyhub.edu.vn",
+  "phone": "0987654321",
+  "dob": "1988-11-12",
+  "password": "Giangvien@123",
+  "role": "LECTURER",
+  "faculty_code": "CNTT"
+}
+
+### 1.3 Đăng ký không hợp lệ - Thiếu thông tin bắt buộc cho STUDENT (Thiếu cohort_code)
+POST {{baseUrl}}/register
+Content-Type: {{contentType}}
+
+{
+  "full_name": "Lê Văn Lỗi",
+  "username": "sinhvienloi",
+  "email": "sinhvienloi@studyhub.edu.vn",
+  "dob": "2004-09-30",
+  "password": "Password@123",
+  "role": "STUDENT",
+  "faculty_code": "CNTT",
+  "major_code": "BIT"
+}
+
+### 1.4 Đăng ký không hợp lệ - Sai định dạng mật khẩu (Không có chữ hoa, không ký tự đặc biệt)
+POST {{baseUrl}}/register
+Content-Type: {{contentType}}
+
+{
+  "full_name": "Trần Văn A",
+  "username": "tranvana",
+  "email": "tranvana@studyhub.edu.vn",
+  "dob": "2000-01-01",
+  "password": "1234567password",
+  "role": "STUDENT",
+  "cohort_code": "K1",
+  "faculty_code": "CNTT",
+  "major_code": "BIT"
+}
+
+### 1.5 Đăng ký không hợp lệ - Trùng Email / Username (Test Lớp phòng vệ Service & DB)
+# Chạy request này lần 2 sau khi đăng ký thành công 'sinhvienk1' ở mục 1.1
+POST {{baseUrl}}/register
+Content-Type: {{contentType}}
+
+{
+  "full_name": "Nguyễn Văn Sinh Viên Trùng",
+  "username": "sinhvienk1",
+  "email": "sinhvienk1@studyhub.edu.vn",
+  "phone": "0912345671",
+  "dob": "2004-05-20",
+  "password": "Sinhvien@123",
+  "role": "STUDENT",
+  "cohort_code": "K1",
+  "faculty_code": "CNTT",
+  "major_code": "BIT"
+}
+
+
+### =========================================================================
+### 2. ĐĂNG NHẬP (POST /login)
+### =========================================================================
+
+### 2.1 Đăng nhập bằng Email thành công (Sinh viên BIT)
+# @name loginByEmail
+POST {{baseUrl}}/login
+Content-Type: {{contentType}}
+
+{
+  "identifier": "sinhvienbit@studyhub.edu.vn",
+  "password": "Sinhvien@123"
+}
+
+### 2.2 Đăng nhập bằng Username thành công (Sinh viên BCS)
+# @name loginByUsername
+POST {{baseUrl}}/login
+Content-Type: {{contentType}}
+
+{
+  "identifier": "sinhvienbcs",
+  "password": "Sinhvien@123"
+}
+
+### 2.3 Đăng nhập thất bại - Sai mật khẩu
+POST {{baseUrl}}/login
+Content-Type: {{contentType}}
+
+{
+  "identifier": "sinhvienk1",
+  "password": "SaiMatKhau@123"
+}
+
+### 2.4 Đăng nhập thất bại - Tài khoản không tồn tại
+POST {{baseUrl}}/login
+Content-Type: {{contentType}}
+
+{
+  "identifier": "khongtontai",
+  "password": "Matkhau@123"
+}
+
+
+### =========================================================================
+### 3. LÀM MỚI ACCESS TOKEN (POST /refresh)
+### Lấy Refresh Token nhận được từ API Đăng nhập thành công dán vào đây để test
+### =========================================================================
+
+### 3.1 Cấp lại Access Token thành công
+POST {{baseUrl}}/refresh
+Content-Type: {{contentType}}
+
+{
+  "refreshToken": "DÁN_REFRESH_TOKEN_CỦA_BẠN_VÀO_ĐÂY"
+}
+
+### 3.2 Cấp lại thất bại - Refresh Token không tồn tại/sai định dạng
+POST {{baseUrl}}/refresh
+Content-Type: {{contentType}}
+
+{
+  "refreshToken": "token-gia-khong-ton-tai-trong-database"
+}
+
+### 3.3 Cấp lại thất bại - Thiếu Refresh Token
+POST {{baseUrl}}/refresh
+Content-Type: {{contentType}}
+
+{
+  "refreshToken": ""
+}
+
+
+### =========================================================================
+### 4. ĐĂNG XUẤT (POST /logout)
+### Hủy phiên đăng nhập bằng cách xóa Refresh Token khỏi DB
+### =========================================================================
+
+### 4.1 Đăng xuất thành công
+POST {{baseUrl}}/logout
+Content-Type: {{contentType}}
+
+{
+  "refreshToken": "DÁN_REFRESH_TOKEN_CỦA_BẠN_VÀO_ĐÂY"
+}

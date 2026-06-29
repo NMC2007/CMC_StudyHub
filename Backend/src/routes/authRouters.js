@@ -1,9 +1,37 @@
+/**
+ * ============================================
+ * AUTH ROUTES - Đăng ký các API xác thực
+ * ============================================
+ * Tiền tố: /api/v1/auth (được đăng ký trong server.js)
+ *
+ * Lưu ý: Các route auth là PUBLIC APIs — không cần
+ * jwtFilter hay rbac middleware vì người dùng chưa đăng nhập
+ * vẫn phải truy cập được.
+ */
+
 import express from "express";
-import { testAuth } from "../controller/authController.js";
+import { register, login, refreshToken, logout } from "#controller/authController.js";
 
 const authRouter = express.Router();
 
-// @route GET /api/v1/auth
-authRouter.get("/", testAuth);
+// @route  POST /api/v1/auth/register
+// @desc   Đăng ký tài khoản mới
+// @access Public
+authRouter.post("/register", register);
+
+// @route  POST /api/v1/auth/login
+// @desc   Đăng nhập (email hoặc username)
+// @access Public
+authRouter.post("/login", login);
+
+// @route  POST /api/v1/auth/refresh
+// @desc   Làm mới Access Token bằng Refresh Token
+// @access Public
+authRouter.post("/refresh", refreshToken);
+
+// @route  POST /api/v1/auth/logout
+// @desc   Đăng xuất (xóa Refresh Token khỏi DB)
+// @access Public
+authRouter.post("/logout", logout);
 
 export default authRouter;
