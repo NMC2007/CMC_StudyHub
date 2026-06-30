@@ -1,0 +1,75 @@
+### =========================================================================
+### STUDYHUB USER PROFILE TESTING SUITE (.http file format)
+### Sử dụng với VS Code Extension: REST Client hoặc Thunder Client / Postman.
+### =========================================================================
+
+@baseUrl = http://localhost:8081/api/v1
+@contentType = application/json
+
+### -------------------------------------------------------------------------
+### BƯỚC 0: ĐĂNG NHẬP LẤY ACCESS TOKEN
+### Gửi request dưới đây, sau đó copy Access Token dán vào biến @accessToken ở dưới.
+### -------------------------------------------------------------------------
+
+# @name loginAdmin
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "identifier": "nmcDev",
+  "password": "Admin@121234"
+}
+
+### Dán Access Token của bạn vào đây:
+@accessToken = DÁN_ACCESS_TOKEN_CỦA_BẠN_VÀO_ĐÂY
+
+
+### =========================================================================
+### 1. LẤY THÔNG TIN CÁ NHÂN (GET /api/v1/users/profile)
+### =========================================================================
+
+GET {{baseUrl}}/users/profile
+Authorization: Bearer {{accessToken}}
+
+
+### =========================================================================
+### 2. CẬP NHẬT THÔNG TIN CÁ NHÂN (PUT /api/v1/users/profile)
+### =========================================================================
+
+### 2.1 Cập nhật tên và ngày sinh thành công
+PUT {{baseUrl}}/users/profile
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "full_name": "Nguyễn Mạnh Cường (Admin Dev)",
+  "phone": "0988776655",
+  "dob": "2007-12-28"
+}
+
+### 2.2 Cập nhật thất bại - Tên quá ngắn (< 2 ký tự)
+PUT {{baseUrl}}/users/profile
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "full_name": "A"
+}
+
+### 2.3 Cập nhật thất bại - Số điện thoại sai định dạng
+PUT {{baseUrl}}/users/profile
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "phone": "12345"
+}
+
+### 2.4 Cập nhật thất bại - Ngày sinh ở tương lai
+PUT {{baseUrl}}/users/profile
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "dob": "2030-01-01"
+}

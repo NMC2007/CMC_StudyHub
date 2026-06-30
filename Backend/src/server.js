@@ -19,6 +19,7 @@ import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import { connectDB } from "./config/db.js";
 import authRouter from "./routes/authRouters.js";
+import userRouter from "./routes/userRouters.js";
 import { errorHandler } from "./advice/errorHandler.js";
 
 // === Load biến môi trường từ file .env ===
@@ -54,6 +55,7 @@ app.use(express.static("public"));
 // ĐĂNG KÝ ROUTES
 // ==========================================
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/users", userRouter);
 
 // ==========================================
 // GLOBAL ERROR HANDLER

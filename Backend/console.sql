@@ -1,6 +1,11 @@
 create database studyhubdb;
 
 -- ==========================================
+-- BẬT EXTENSION TÌM KIẾM KHÔNG DẤU
+-- ==========================================
+CREATE EXTENSION IF NOT EXISTS unaccent;
+
+-- ==========================================
 -- 1. TẠO CÁC ENUM TYPE
 -- ==========================================
 CREATE TYPE user_role AS ENUM ('ADMIN', 'LECTURER', 'STUDENT');
@@ -96,6 +101,7 @@ CREATE TABLE documents (
                            file_size INT,
                            file_type VARCHAR(50),
                            download_count INT DEFAULT 0,
+                           like_count INT DEFAULT 0,
                            is_deleted BOOLEAN DEFAULT FALSE,
                            deleted_at TIMESTAMP,
                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -205,3 +211,18 @@ VALUES
         'Bachelor of Artificial Intelligence'
     )
 ON CONFLICT (code) DO NOTHING;
+
+-- -- ==========================================
+-- -- SEED DATA: ADMIN USER
+-- -- ==========================================
+-- -- Mật khẩu: Admin@121234 (đã hash qua bcrypt 10 salt rounds)
+-- INSERT INTO users (full_name, username, email, dob, password_hash, role)
+-- VALUES (
+--     'Nguyễn Mạnh Cường',
+--     'nmcDev',
+--     'manhcuong281207@gmail.com',
+--     '2007-12-28',
+--     '$2b$10$tJz8p7P5Kj7t0g1O.6O/3u3Rk8K3S/3iA.s0A/3u3Rk8K3S/3iA.s',
+--     'ADMIN'
+-- )
+-- ON CONFLICT (username) DO NOTHING;

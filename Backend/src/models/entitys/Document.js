@@ -72,6 +72,11 @@ export const Document = new EntitySchema({
             type: "int",
             default: 0,
         },
+        // === Số lượt thích (Like count cache) ===
+        like_count: {
+            type: "int",
+            default: 0,
+        },
         // === Cờ xóa mềm (Soft Delete) ===
         is_deleted: {
             type: "boolean",
