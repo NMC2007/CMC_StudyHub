@@ -4,6 +4,7 @@
  * ============================================
  */
 
+import fs from "fs";
 import { toAPIResponse } from "#models/dto/response/APIResponse.js";
 import * as userService from "#service/userService.js";
 
@@ -54,6 +55,11 @@ export const updateAvatar = async (req, res, next) => {
             .status(result.statusCode)
             .json(toAPIResponse(result.statusCode, result.message, result.data, result.errors));
     } catch (error) {
+        if (req.file && req.file.path && fs.existsSync(req.file.path)) {
+            try {
+                fs.unlinkSync(req.file.path);
+            } catch (e) {}
+        }
         next(error);
     }
 };

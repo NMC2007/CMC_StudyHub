@@ -20,6 +20,7 @@ import dotenv from "dotenv";
 import { connectDB } from "./config/db.js";
 import authRouter from "./routes/authRouters.js";
 import userRouter from "./routes/userRouters.js";
+import academicRouter from "./routes/academicRouters.js";
 import { errorHandler } from "./advice/errorHandler.js";
 
 // === Load biến môi trường từ file .env ===
@@ -56,6 +57,7 @@ app.use(express.static("public"));
 // ==========================================
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRouter);
+app.use("/api/v1/academic", academicRouter);
 
 // ==========================================
 // GLOBAL ERROR HANDLER

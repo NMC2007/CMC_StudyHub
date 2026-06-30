@@ -1,0 +1,230 @@
+### =========================================================================
+### STUDYHUB ACADEMIC STRUCTURE TESTING SUITE (.http file format)
+### Sử dụng với VS Code Extension: REST Client
+### =========================================================================
+
+@baseUrl = http://localhost:8081/api/v1/academic
+@authUrl = http://localhost:8081/api/v1/auth
+@contentType = application/json
+
+### -------------------------------------------------------------------------
+### BƯỚC 0: ĐĂNG NHẬP ADMIN LẤY ACCESS TOKEN
+### -------------------------------------------------------------------------
+
+# @name loginAdmin
+POST {{authUrl}}/login
+Content-Type: {{contentType}}
+
+{
+  "identifier": "nmcDev",
+  "password": "Admin@121234"
+}
+
+### Dán Access Token ở đây:
+@adminToken = DÁN_ACCESS_TOKEN_CỦA_ADMIN_VÀO_ĐÂY
+
+
+### =========================================================================
+### 1. KHÓA HỌC (COHORTS)
+### =========================================================================
+
+### 1.1 [PUBLIC] Lấy tất cả khóa học
+GET {{baseUrl}}/cohorts
+
+### 1.2 [ADMIN] Tạo khóa học mới
+POST {{baseUrl}}/cohorts
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+{
+  "code": "K5",
+  "name": "Khóa 5",
+  "start_year": 2027,
+  "end_year": 2031
+}
+
+### 1.3 [ADMIN] Cập nhật khóa học (Thay id=1 bằng ID thực tế)
+PUT {{baseUrl}}/cohorts/1
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Khóa 1 (Cập nhật)"
+}
+
+### 1.4 [ADMIN] Xóa khóa học (Thay id bằng ID thực tế)
+DELETE {{baseUrl}}/cohorts/5
+Authorization: Bearer {{adminToken}}
+
+### 1.5 [LỖI] Tạo khóa trùng mã
+POST {{baseUrl}}/cohorts
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+{
+  "code": "K1",
+  "name": "Khóa 1 Duplicate",
+  "start_year": 2023,
+  "end_year": 2027
+}
+
+### 1.6 [LỖI] Tạo khóa thiếu trường bắt buộc
+POST {{baseUrl}}/cohorts
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+{
+  "code": "K99"
+}
+
+### 1.7 [LỖI] User thường không được tạo khóa (dùng token sinh viên)
+# Đăng nhập bằng tài khoản sinh viên trước, copy token dán vào đây
+@studentToken = DÁN_ACCESS_TOKEN_CỦA_SINH_VIÊN_VÀO_ĐÂY
+
+POST {{baseUrl}}/cohorts
+Authorization: Bearer {{studentToken}}
+Content-Type: {{contentType}}
+
+{
+  "code": "K99",
+  "name": "Khóa 99",
+  "start_year": 2050,
+  "end_year": 2054
+}
+
+
+### =========================================================================
+### 2. KHOA (FACULTIES)
+### =========================================================================
+
+### 2.1 [PUBLIC] Lấy tất cả khoa
+GET {{baseUrl}}/faculties
+
+### 2.2 [ADMIN] Tạo khoa mới
+POST {{baseUrl}}/faculties
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+{
+  "code": "KT",
+  "name": "Khoa Kinh tế",
+  "description": "Khoa Kinh tế & Quản trị Kinh doanh"
+}
+
+### 2.3 [ADMIN] Cập nhật khoa
+PUT {{baseUrl}}/faculties/1
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+{
+  "description": "Khoa Công nghệ Thông tin - CMC University"
+}
+
+### 2.4 [ADMIN] Xóa khoa
+DELETE {{baseUrl}}/faculties/5
+Authorization: Bearer {{adminToken}}
+
+
+### =========================================================================
+### 3. NGÀNH HỌC (MAJORS)
+### =========================================================================
+
+### 3.1 [PUBLIC] Lấy tất cả ngành
+GET {{baseUrl}}/majors
+
+### 3.2 [PUBLIC] Lấy ngành thuộc khoa CNTT
+GET {{baseUrl}}/majors?faculty_code=CNTT
+
+### 3.3 [ADMIN] Tạo ngành mới
+POST {{baseUrl}}/majors
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+{
+  "code": "BIS",
+  "name": "Hệ thống thông tin",
+  "description": "Bachelor of Information Systems",
+  "faculty_code": "CNTT"
+}
+
+### 3.4 [ADMIN] Cập nhật ngành
+PUT {{baseUrl}}/majors/1
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+{
+  "description": "Kỹ thuật phần mềm - Software Engineering"
+}
+
+### 3.5 [ADMIN] Xóa ngành
+DELETE {{baseUrl}}/majors/5
+Authorization: Bearer {{adminToken}}
+
+### 3.6 [LỖI] Tạo ngành với khoa không tồn tại
+POST {{baseUrl}}/majors
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+{
+  "code": "TEST",
+  "name": "Ngành Test",
+  "faculty_code": "KHOA_KHONG_CO"
+}
+
+
+### =========================================================================
+### 4. MÔN HỌC (SUBJECTS)
+### =========================================================================
+
+### 4.1 [PUBLIC] Lấy tất cả môn học
+GET {{baseUrl}}/subjects
+
+### 4.2 [PUBLIC] Lấy môn học thuộc ngành BIT
+GET {{baseUrl}}/subjects?major_code=BIT
+
+### 4.3 [ADMIN] Tạo môn học mới (Thuộc 2 ngành BIT và BAI)
+POST {{baseUrl}}/subjects
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+{
+  "code": "IT1001",
+  "name": "Lập trình cơ bản",
+  "description": "Lập trình nhập môn với C/C++",
+  "major_codes": ["BIT", "BAI"]
+}
+
+### 4.4 [ADMIN] Cập nhật môn học (Gán thêm ngành BCS)
+PUT {{baseUrl}}/subjects/1
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Lập trình cơ bản Nâng cấp",
+  "major_codes": ["BIT", "BAI", "BCS"]
+}
+
+### 4.5 [ADMIN] Xóa môn học
+DELETE {{baseUrl}}/subjects/1
+Authorization: Bearer {{adminToken}}
+
+### 4.6 [LỖI] Tạo môn với ngành không tồn tại
+POST {{baseUrl}}/subjects
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+{
+  "code": "XX0000",
+  "name": "Môn Test",
+  "major_codes": ["NGANH_KHONG_CO"]
+}
+
+### 4.7 [LỖI] Tạo môn thiếu major_codes
+POST {{baseUrl}}/subjects
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+{
+  "code": "XX0001",
+  "name": "Môn Test 2"
+}

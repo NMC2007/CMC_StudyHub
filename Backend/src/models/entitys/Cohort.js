@@ -53,12 +53,6 @@ export const Cohort = new EntitySchema({
             target: "User",
             inverseSide: "cohort",
         },
-        // === Một khóa có nhiều môn học ===
-        subjects: {
-            type: "one-to-many",
-            target: "Subject",
-            inverseSide: "cohort",
-        },
         // === Một khóa có nhiều tài liệu ===
         documents: {
             type: "one-to-many",

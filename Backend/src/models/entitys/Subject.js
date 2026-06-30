@@ -3,10 +3,9 @@
  * ENTITY: Subject (Môn học)
  * ============================================
  * Bảng: subjects
- * Mô tả: Lưu thông tin môn học, thuộc một Khóa + Ngành.
+ * Mô tả: Lưu thông tin môn học chung của trường.
  * Quan hệ:
- *   - ManyToOne → Cohort (môn thuộc khóa nào) — ON DELETE CASCADE
- *   - ManyToOne → Major (môn thuộc ngành nào) — ON DELETE CASCADE
+ *   - ManyToMany → Major (một môn có thể thuộc nhiều ngành học) qua bảng subject_majors
  *   - OneToMany → Document (một môn có nhiều tài liệu)
  */
 
@@ -22,10 +21,11 @@ export const Subject = new EntitySchema({
             primary: true,
             generated: true,
         },
-        // === Mã môn học (VD: IT3011) ===
+        // === Mã môn học (VD: IT3011) - Unique ===
         code: {
             type: "varchar",
             length: 30,
+            unique: true,
             nullable: false,
         },
         // === Tên môn (VD: Lập trình Java) ===
@@ -41,23 +41,22 @@ export const Subject = new EntitySchema({
         },
     },
     relations: {
-        // === Môn thuộc Khóa nào (FK → cohorts.id) ===
-        cohort: {
-            type: "many-to-one",
-            target: "Cohort",
-            joinColumn: { name: "cohort_id" },
-            inverseSide: "subjects",
-            nullable: false,
-            onDelete: "CASCADE",
-        },
-        // === Môn thuộc Ngành nào (FK → majors.id) ===
-        major: {
-            type: "many-to-one",
+        // === Môn thuộc những Ngành nào (ManyToMany qua subject_majors) ===
+        majors: {
+            type: "many-to-many",
             target: "Major",
-            joinColumn: { name: "major_id" },
             inverseSide: "subjects",
-            nullable: false,
-            onDelete: "CASCADE",
+            joinTable: {
+                name: "subject_majors",
+                joinColumn: {
+                    name: "subject_id",
+                    referencedColumnName: "id",
+                },
+                inverseJoinColumn: {
+                    name: "major_id",
+                    referencedColumnName: "id",
+                },
+            },
         },
         // === Một môn có nhiều tài liệu ===
         documents: {

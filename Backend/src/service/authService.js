@@ -225,9 +225,12 @@ export const login = async (body) => {
     const accessTokenPayload = {
         id: user.id,
         role: user.role,
-        cohort_id: user.cohort_id || null,
-        faculty_id: user.faculty_id || null,
-        major_id: user.major_id || null,
+        cohort_id: user.cohort?.id || null,
+        cohort_code: user.cohort?.code || null,
+        faculty_id: user.faculty?.id || null,
+        faculty_code: user.faculty?.code || null,
+        major_id: user.major?.id || null,
+        major_code: user.major?.code || null,
     };
     const accessToken = generateAccessToken(accessTokenPayload);
 
@@ -325,9 +328,12 @@ export const refreshAccessToken = async (token) => {
     const accessTokenPayload = {
         id: user.id,
         role: user.role,
-        cohort_id: user.cohort_id || null,
-        faculty_id: user.faculty_id || null,
-        major_id: user.major_id || null,
+        cohort_id: user.cohort?.id || null,
+        cohort_code: user.cohort?.code || null,
+        faculty_id: user.faculty?.id || null,
+        faculty_code: user.faculty?.code || null,
+        major_id: user.major?.id || null,
+        major_code: user.major?.code || null,
     };
     const newAccessToken = generateAccessToken(accessTokenPayload);
 

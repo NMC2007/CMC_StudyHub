@@ -52,11 +52,11 @@ export const Major = new EntitySchema({
             nullable: false,
             onDelete: "CASCADE",
         },
-        // === Một ngành có nhiều môn học ===
+        // === Một ngành có nhiều môn học (ManyToMany) ===
         subjects: {
-            type: "one-to-many",
+            type: "many-to-many",
             target: "Subject",
-            inverseSide: "major",
+            inverseSide: "majors",
         },
         // === Một ngành có nhiều người dùng ===
         users: {

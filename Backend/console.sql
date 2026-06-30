@@ -44,11 +44,16 @@ CREATE TABLE majors (
 -- Bảng Môn học
 CREATE TABLE subjects (
                           id SERIAL PRIMARY KEY,
-                          cohort_id INT NOT NULL REFERENCES cohorts(id) ON DELETE CASCADE,
-                          major_id INT NOT NULL REFERENCES majors(id) ON DELETE CASCADE,
-                          code VARCHAR(30) NOT NULL,
+                          code VARCHAR(30) UNIQUE NOT NULL,
                           name VARCHAR(150) NOT NULL,
                           description TEXT
+);
+
+-- Bảng Trung gian Môn học - Ngành học (ManyToMany)
+CREATE TABLE subject_majors (
+                                subject_id INT NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+                                major_id INT NOT NULL REFERENCES majors(id) ON DELETE CASCADE,
+                                PRIMARY KEY (subject_id, major_id)
 );
 
 -- ==========================================

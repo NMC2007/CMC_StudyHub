@@ -131,7 +131,9 @@ export const updateUserAvatar = async (userId, file) => {
 
     // 2. Xóa ảnh cũ vật lý nếu có (và là file nội bộ trong thư mục public/uploads/avatars/)
     if (currentUser.avatar && currentUser.avatar.startsWith("/uploads/avatars/")) {
-        const oldFilePath = path.join(process.cwd(), "public", currentUser.avatar);
+        // Loại bỏ dấu '/' đầu chuỗi để path.join tương thích hoàn hảo trên Windows/Linux
+        const relativeAvatarPath = currentUser.avatar.startsWith("/") ? currentUser.avatar.slice(1) : currentUser.avatar;
+        const oldFilePath = path.join(process.cwd(), "public", relativeAvatarPath);
         if (fs.existsSync(oldFilePath)) {
             try {
                 fs.unlinkSync(oldFilePath);
@@ -141,9 +143,19 @@ export const updateUserAvatar = async (userId, file) => {
         }
     }
 
-    // 3. Cập nhật đường dẫn avatar mới trong DB
-    const avatarUrl = `/uploads/avatars/${file.filename}`;
-    const updatedUser = await updateUserById(userId, { avatar: avatarUrl });
+    // 3. Cập nhật đường dẫn avatar mới trong DB (dọn dẹp file mới upload nếu lỗi DB)
+    let updatedUser;
+    try {
+        const avatarUrl = `/uploads/avatars/${file.filename}`;
+        updatedUser = await updateUserById(userId, { avatar: avatarUrl });
+    } catch (dbError) {
+        try {
+            if (file && file.path && fs.existsSync(file.path)) {
+                fs.unlinkSync(file.path);
+            }
+        } catch (cleanupError) {}
+        throw dbError;
+    }
 
     return {
         statusCode: 200,
