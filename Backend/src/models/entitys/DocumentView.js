@@ -16,6 +16,8 @@ export const DocumentView = new EntitySchema({
     tableName: "document_views",
     columns: {
         id: { type: "int", primary: true, generated: true },
+        user_id: { type: "int", nullable: false },
+        document_id: { type: "int", nullable: false },
         // === Thời gian xem (thay vì created_at, dùng viewed_at theo schema gốc) ===
         viewed_at: { type: "timestamp", default: () => "CURRENT_TIMESTAMP" },
     },

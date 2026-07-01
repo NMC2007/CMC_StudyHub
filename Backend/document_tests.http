@@ -1,0 +1,167 @@
+### ============================================
+### TÀI LIỆU HƯỚNG DẪN TEST API DOCUMENT BẰNG POSTMAN (HOẶC REST CLIENT)
+### ============================================
+
+# BIẾN MÔI TRƯỜNG (Cấu hình trong Postman Environment hoặc file .env của REST Client)
+@baseUrl = http://localhost:8081/api/v1
+# Thay thế token dưới đây bằng Access Token thật sau khi gọi API Login
+@accessToken = YOUR_ACCESS_TOKEN_HERE
+@documentId = 1
+
+### ==========================================
+### 1. UPLOAD TÀI LIỆU
+### ==========================================
+# POST {{baseUrl}}/documents/upload
+# Trong Postman:
+# 1. Tab Headers: Authorization -> Bearer Token -> điền {{accessToken}}
+# 2. Tab Body -> Chọn "form-data"
+# 3. Thêm các key sau:
+#    - file: [Kiểu File] -> Chọn 1 file PDF/DOCX/PPTX (dưới 50MB)
+#    - title: [Kiểu Text] -> "Bài giảng Java Buổi 1"
+#    - description: [Kiểu Text] -> "Slide tóm tắt nội dung buổi 1"
+#    - subject_id: [Kiểu Text] -> 1 (ID môn học bắt buộc)
+#    - cohort_id: [Kiểu Text] -> 1 (Lưu ý: Nếu là STUDENT, ID này phải khớp với thông tin cá nhân)
+#    - faculty_id: [Kiểu Text] -> 1
+#    - major_id: [Kiểu Text] -> 1
+#    - document_type: [Kiểu Text] -> "SLIDE" (hoặc DOCUMENT, ASSIGNMENT, EXAM, REFERENCE)
+#    - visibility: [Kiểu Text] -> "PUBLIC" (hoặc GROUP, PRIVATE)
+
+POST {{baseUrl}}/documents/upload
+Authorization: Bearer {{accessToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="title"
+
+Tài liệu Hướng dẫn Postman
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="subject_id"
+
+1
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="cohort_id"
+
+1
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="faculty_id"
+
+1
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="major_id"
+
+1
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="sample.pdf"
+Content-Type: application/pdf
+
+< ./sample.pdf
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### ==========================================
+### 2. TÌM KIẾM VÀ LỌC TÀI LIỆU (ADVANCED SEARCH)
+### ==========================================
+# GET {{baseUrl}}/documents/search
+# Trong Postman:
+# 1. Tab Headers: Authorization -> Bearer Token -> điền {{accessToken}}
+# 2. Tab Params -> Thêm các bộ lọc:
+#    - q: java (Tìm kiếm từ khóa)
+#    - uploader: nmc (Tìm theo người đăng)
+#    - role: LECTURER (Lọc tài liệu của giảng viên)
+#    - subject_id: 1
+#    - type: SLIDE
+#    - page: 1
+#    - limit: 10
+
+GET {{baseUrl}}/documents/search?q=java&page=1&limit=10
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+### ==========================================
+### 3. LẤY CHI TIẾT TÀI LIỆU
+### ==========================================
+# GET {{baseUrl}}/documents/:id
+# Lấy thông tin chi tiết và tự động tăng lượt xem.
+
+GET {{baseUrl}}/documents/{{documentId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+### ==========================================
+### 4. CẬP NHẬT TÀI LIỆU (Chỉ Owner hoặc Admin)
+### ==========================================
+# PUT {{baseUrl}}/documents/:id
+# Trong Postman: Tab Body -> raw -> JSON
+
+PUT {{baseUrl}}/documents/{{documentId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+    "title": "Tiêu đề đã được cập nhật bằng Postman",
+    "description": "Cập nhật lại mô tả cho chi tiết hơn.",
+    "visibility": "PRIVATE",
+    "document_type": "REFERENCE"
+}
+
+### ==========================================
+### 5. XÓA MỀM TÀI LIỆU (SOFT DELETE)
+### ==========================================
+# DELETE {{baseUrl}}/documents/:id
+# Xóa tài liệu chuyển vào thùng rác (is_deleted = true)
+
+DELETE {{baseUrl}}/documents/{{documentId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+### ==========================================
+### 6. KHÔI PHỤC TÀI LIỆU TỪ THÙNG RÁC
+### ==========================================
+# POST {{baseUrl}}/documents/:id/restore
+# Khôi phục tài liệu (is_deleted = false)
+
+POST {{baseUrl}}/documents/{{documentId}}/restore
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+
+
+
+### ==========================================
+### 7. THÍCH HOẶC BỎ THÍCH TÀI LIỆU (TOGGLE LIKE)
+### ==========================================
+# POST {{baseUrl}}/documents/:id/like
+# Gửi lần 1: Thích (is_liked = true, like_count + 1)
+# Gửi lần 2: Bỏ thích (is_liked = false, like_count - 1)
+
+POST {{baseUrl}}/documents/{{documentId}}/like
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+### ==========================================
+### 8. ĐÁNH DẤU HOẶC GỠ ĐÁNH DẤU (TOGGLE BOOKMARK)
+### ==========================================
+# POST {{baseUrl}}/documents/:id/bookmark
+# Gửi lần 1: Đánh dấu (is_bookmarked = true)
+# Gửi lần 2: Gỡ đánh dấu (is_bookmarked = false)
+
+POST {{baseUrl}}/documents/{{documentId}}/bookmark
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+### ==========================================
+### 9. LẤY DANH SÁCH TÀI LIỆU ĐÃ BOOKMARK
+### ==========================================
+# GET {{baseUrl}}/documents/bookmarks?page=1&limit=10
+# Hỗ trợ song song các bộ lọc: q, subject_id, type...
+
+GET {{baseUrl}}/documents/bookmarks?page=1&limit=10
+Authorization: Bearer {{accessToken}}
+
+### ==========================================
+### 10. LẤY DANH SÁCH TÀI LIỆU ĐÃ THÍCH (LIKED)
+### ==========================================
+# GET {{baseUrl}}/documents/likes?page=1&limit=10
+# Hỗ trợ song song các bộ lọc: q, subject_id, type...
+
+GET {{baseUrl}}/documents/likes?page=1&limit=10
+Authorization: Bearer {{accessToken}}

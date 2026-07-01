@@ -77,6 +77,11 @@ export const Document = new EntitySchema({
             type: "int",
             default: 0,
         },
+        // === Số lượt xem (View count cache) ===
+        view_count: {
+            type: "int",
+            default: 0,
+        },
         // === Cờ xóa mềm (Soft Delete) ===
         is_deleted: {
             type: "boolean",
