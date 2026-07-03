@@ -11,6 +11,7 @@
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { UPLOAD_CONFIG } from "#config/constants.js";
 
 // === Hàm tạo thư mục nếu chưa tồn tại ===
 const ensureDirectoryExistence = (dirPath) => {
@@ -29,7 +30,6 @@ const documentStorage = multer.diskStorage({
         cb(null, uploadPath);
     },
     filename: (req, file, cb) => {
-        // Tên file unique: timestamp + tên gốc (đã thay thế khoảng trắng bằng dấu gạch dưới)
         const safeOriginalName = file.originalname.replace(/\s+/g, "_");
         const uniqueSuffix = `${Date.now()}-${safeOriginalName}`;
         cb(null, uniqueSuffix);
@@ -37,14 +37,12 @@ const documentStorage = multer.diskStorage({
 });
 
 const documentFileFilter = (req, file, cb) => {
-    // Các phần mở rộng cho phép
-    const allowedExtensions = [".pdf", ".docx", ".pptx", ".zip"];
     const ext = path.extname(file.originalname).toLowerCase();
 
-    if (allowedExtensions.includes(ext)) {
+    if (UPLOAD_CONFIG.DOC.ALLOWED_EXTENSIONS.includes(ext)) {
         cb(null, true);
     } else {
-        cb(new Error("Định dạng file không hợp lệ! Chỉ chấp nhận file: .pdf, .docx, .pptx, .zip"), false);
+        cb(new Error(UPLOAD_CONFIG.DOC.ERROR_MESSAGE), false);
     }
 };
 
@@ -52,7 +50,7 @@ export const uploadDocument = multer({
     storage: documentStorage,
     fileFilter: documentFileFilter,
     limits: {
-        fileSize: 50 * 1024 * 1024, // Giới hạn 50MB
+        fileSize: UPLOAD_CONFIG.DOC.MAX_SIZE_BYTES,
     },
 });
 
@@ -73,13 +71,12 @@ const avatarStorage = multer.diskStorage({
 });
 
 const avatarFileFilter = (req, file, cb) => {
-    const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp"];
     const ext = path.extname(file.originalname).toLowerCase();
 
-    if (allowedExtensions.includes(ext)) {
+    if (UPLOAD_CONFIG.AVATAR.ALLOWED_EXTENSIONS.includes(ext)) {
         cb(null, true);
     } else {
-        cb(new Error("Định dạng ảnh không hợp lệ! Chỉ chấp nhận ảnh: .jpg, .jpeg, .png, .webp"), false);
+        cb(new Error(UPLOAD_CONFIG.AVATAR.ERROR_MESSAGE), false);
     }
 };
 
@@ -87,6 +84,6 @@ export const uploadAvatar = multer({
     storage: avatarStorage,
     fileFilter: avatarFileFilter,
     limits: {
-        fileSize: 5 * 1024 * 1024, // Giới hạn 5MB
+        fileSize: UPLOAD_CONFIG.AVATAR.MAX_SIZE_BYTES,
     },
 });

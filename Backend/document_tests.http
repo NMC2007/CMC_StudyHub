@@ -114,7 +114,17 @@ Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 ### ==========================================
-### 6. KHÔI PHỤC TÀI LIỆU TỪ THÙNG RÁC
+### 6. XEM DANH SÁCH TÀI LIỆU TRONG THÙNG RÁC
+### ==========================================
+# GET {{baseUrl}}/documents/trash?page=1&limit=10
+# Xem lại các tài liệu đã xóa mềm của user hiện tại trước khi quyết định khôi phục.
+
+GET {{baseUrl}}/documents/trash?page=1&limit=10
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+### ==========================================
+### 7. KHÔI PHỤC TÀI LIỆU TỪ THÙNG RÁC
 ### ==========================================
 # POST {{baseUrl}}/documents/:id/restore
 # Khôi phục tài liệu (is_deleted = false)
@@ -127,7 +137,7 @@ Content-Type: application/json
 
 
 ### ==========================================
-### 7. THÍCH HOẶC BỎ THÍCH TÀI LIỆU (TOGGLE LIKE)
+### 8. THÍCH HOẶC BỎ THÍCH TÀI LIỆU (TOGGLE LIKE)
 ### ==========================================
 # POST {{baseUrl}}/documents/:id/like
 # Gửi lần 1: Thích (is_liked = true, like_count + 1)
@@ -138,7 +148,7 @@ Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 ### ==========================================
-### 8. ĐÁNH DẤU HOẶC GỠ ĐÁNH DẤU (TOGGLE BOOKMARK)
+### 9. ĐÁNH DẤU HOẶC GỠ ĐÁNH DẤU (TOGGLE BOOKMARK)
 ### ==========================================
 # POST {{baseUrl}}/documents/:id/bookmark
 # Gửi lần 1: Đánh dấu (is_bookmarked = true)
@@ -149,7 +159,7 @@ Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 ### ==========================================
-### 9. LẤY DANH SÁCH TÀI LIỆU ĐÃ BOOKMARK
+### 10. LẤY DANH SÁCH TÀI LIỆU ĐÃ BOOKMARK
 ### ==========================================
 # GET {{baseUrl}}/documents/bookmarks?page=1&limit=10
 # Hỗ trợ song song các bộ lọc: q, subject_id, type...
@@ -158,7 +168,7 @@ GET {{baseUrl}}/documents/bookmarks?page=1&limit=10
 Authorization: Bearer {{accessToken}}
 
 ### ==========================================
-### 10. LẤY DANH SÁCH TÀI LIỆU ĐÃ THÍCH (LIKED)
+### 11. LẤY DANH SÁCH TÀI LIỆU ĐÃ THÍCH (LIKED)
 ### ==========================================
 # GET {{baseUrl}}/documents/likes?page=1&limit=10
 # Hỗ trợ song song các bộ lọc: q, subject_id, type...

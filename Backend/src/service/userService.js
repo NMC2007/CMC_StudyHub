@@ -117,9 +117,15 @@ export const updateUserAvatar = async (userId, file) => {
     const currentUser = await findUserProfileById(userId);
     if (!currentUser) {
         // Xóa file vừa upload nếu user không tồn tại
-        try {
-            fs.unlinkSync(file.path);
-        } catch (e) {}
+        if (file && file.path) {
+            try {
+                await fs.promises.unlink(file.path);
+            } catch (e) {
+                if (e.code !== "ENOENT") {
+                    console.warn(`⚠️ [Cleanup Warning] Không thể xóa file avatar tạm: ${file.path}`, e.message);
+                }
+            }
+        }
 
         return {
             statusCode: 404,
@@ -131,14 +137,13 @@ export const updateUserAvatar = async (userId, file) => {
 
     // 2. Xóa ảnh cũ vật lý nếu có (và là file nội bộ trong thư mục public/uploads/avatars/)
     if (currentUser.avatar && currentUser.avatar.startsWith("/uploads/avatars/")) {
-        // Loại bỏ dấu '/' đầu chuỗi để path.join tương thích hoàn hảo trên Windows/Linux
         const relativeAvatarPath = currentUser.avatar.startsWith("/") ? currentUser.avatar.slice(1) : currentUser.avatar;
         const oldFilePath = path.join(process.cwd(), "public", relativeAvatarPath);
-        if (fs.existsSync(oldFilePath)) {
-            try {
-                fs.unlinkSync(oldFilePath);
-            } catch (err) {
-                console.warn(`⚠️ Không thể xóa file avatar cũ: ${oldFilePath}`, err.message);
+        try {
+            await fs.promises.unlink(oldFilePath);
+        } catch (err) {
+            if (err.code !== "ENOENT") {
+                console.warn(`⚠️ [Cleanup Warning] Không thể xóa file avatar cũ: ${oldFilePath}`, err.message);
             }
         }
     }
@@ -149,11 +154,15 @@ export const updateUserAvatar = async (userId, file) => {
         const avatarUrl = `/uploads/avatars/${file.filename}`;
         updatedUser = await updateUserById(userId, { avatar: avatarUrl });
     } catch (dbError) {
-        try {
-            if (file && file.path && fs.existsSync(file.path)) {
-                fs.unlinkSync(file.path);
+        if (file && file.path) {
+            try {
+                await fs.promises.unlink(file.path);
+            } catch (cleanupError) {
+                if (cleanupError.code !== "ENOENT") {
+                    console.warn(`⚠️ [Cleanup Warning] Không thể xóa file avatar khi rollback: ${file.path}`, cleanupError.message);
+                }
             }
-        } catch (cleanupError) {}
+        }
         throw dbError;
     }
 

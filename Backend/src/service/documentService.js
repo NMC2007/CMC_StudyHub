@@ -24,6 +24,7 @@ import {
     findDocumentById,
     updateDocumentById,
     searchDocumentsRepo,
+    findTrashDocumentsRepo,
 } from "#repository/documentRepository.js";
 import {
     recordView,
@@ -65,7 +66,7 @@ export const uploadDocument = async (user, file, body) => {
     const validation = validateUploadDocumentRequest(body);
     if (!validation.isValid) {
         // Dọn dẹp file đã upload nếu validate thất bại
-        cleanupFile(file.path);
+        await cleanupFile(file.path);
         return {
             statusCode: 400,
             message: "Dữ liệu upload không hợp lệ.",
@@ -84,7 +85,7 @@ export const uploadDocument = async (user, file, body) => {
 
         // Sinh viên bắt buộc phải gửi đủ cohort_id, faculty_id, major_id
         if (!cohortId || !facultyId || !majorId) {
-            cleanupFile(file.path);
+            await cleanupFile(file.path);
             return {
                 statusCode: 400,
                 message: "Sinh viên phải cung cấp đầy đủ Khóa (cohort_id), Khoa (faculty_id) và Ngành (major_id) khi upload tài liệu.",
@@ -100,7 +101,7 @@ export const uploadDocument = async (user, file, body) => {
         if (majorId !== user.major_id) mismatchFields.push("Ngành (major_id)");
 
         if (mismatchFields.length > 0) {
-            cleanupFile(file.path);
+            await cleanupFile(file.path);
             return {
                 statusCode: 403,
                 message: `Bạn chỉ được upload tài liệu vào đúng ${mismatchFields.join(", ")} của mình.`,
@@ -110,17 +111,34 @@ export const uploadDocument = async (user, file, body) => {
         }
     }
 
-    // Bước 4: Kiểm tra subject_id tồn tại trong DB
+    // Bước 4: Kiểm tra subject_id tồn tại trong DB (kèm relations majors để kiểm tra quyền STUDENT)
     const subjectRepo = AppDataSource.getRepository("Subject");
-    const subject = await subjectRepo.findOneBy({ id: parseInt(body.subject_id) });
+    const subject = await subjectRepo.findOne({
+        where: { id: parseInt(body.subject_id) },
+        relations: { majors: true },
+    });
     if (!subject) {
-        cleanupFile(file.path);
+        await cleanupFile(file.path);
         return {
             statusCode: 400,
             message: `Môn học với ID '${body.subject_id}' không tồn tại trong hệ thống.`,
             data: null,
             errors: ["Subject Not Found"],
         };
+    }
+
+    // Sửa Lỗi 2.2: Kiểm tra môn học có thuộc chương trình đào tạo chuyên ngành của sinh viên không
+    if (user.role === "STUDENT") {
+        const isSubjectInMajor = subject.majors && subject.majors.some((m) => m.id === user.major_id);
+        if (!isSubjectInMajor) {
+            await cleanupFile(file.path);
+            return {
+                statusCode: 403,
+                message: "Môn học này không thuộc chương trình đào tạo của chuyên ngành bạn đang theo học.",
+                data: null,
+                errors: ["Upload Guard Violation — Subject does not belong to student major"],
+            };
+        }
     }
 
     // Bước 5: Chuẩn bị dữ liệu tài liệu và lưu vào DB
@@ -147,7 +165,7 @@ export const uploadDocument = async (user, file, body) => {
         savedDocument = await saveDocument(docData);
     } catch (dbError) {
         // Rollback: Xóa file vật lý nếu lưu DB thất bại
-        cleanupFile(file.path);
+        await cleanupFile(file.path);
         throw dbError;
     }
 
@@ -374,6 +392,32 @@ export const restoreDocument = async (documentId, user) => {
     };
 };
 
+/**
+ * Lấy danh sách tài liệu trong thùng rác của user hiện tại.
+ * @param {Object} queryParams
+ * @param {Object} user
+ */
+export const getTrashDocuments = async (queryParams, user) => {
+    const { documents, total, page, totalPages } = await findTrashDocumentsRepo(queryParams, user);
+
+    const data = documents.map((doc) => toDocumentResponse(doc, user?.id || null));
+
+    return {
+        statusCode: 200,
+        message: "Lấy danh sách tài liệu trong thùng rác thành công.",
+        data: {
+            documents: data,
+            pagination: {
+                total,
+                page,
+                limit: Math.max(1, Math.min(100, parseInt(queryParams.limit) || 10)),
+                total_pages: totalPages,
+            },
+        },
+        errors: null,
+    };
+};
+
 // ==========================================
 // 6. TÌM KIẾM & LỌC NÂNG CAO
 // ==========================================
@@ -541,13 +585,13 @@ export const toggleBookmarkDocument = async (documentId, user) => {
  * Xóa file vật lý khỏi ổ cứng (dùng cho rollback khi lỗi DB hoặc validation).
  * @param {string} filePath - Đường dẫn tuyệt đối tới file cần xóa
  */
-const cleanupFile = (filePath) => {
+const cleanupFile = async (filePath) => {
     if (!filePath) return;
     try {
-        if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
-        }
+        await fs.promises.unlink(filePath);
     } catch (err) {
-        console.warn(`⚠️ Không thể dọn dẹp file rác: ${filePath}`, err.message);
+        if (err.code !== "ENOENT") {
+            console.warn(`⚠️ [Cleanup Warning] Không thể dọn dẹp file rác: ${filePath}`, err.message);
+        }
     }
 };

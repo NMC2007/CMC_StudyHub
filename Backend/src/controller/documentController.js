@@ -28,11 +28,14 @@ export const uploadDocument = async (req, res, next) => {
             .status(result.statusCode)
             .json(toAPIResponse(result.statusCode, result.message, result.data, result.errors));
     } catch (error) {
-        // Phòng thủ: xóa file rác nếu exception xảy ra ngoài tầm kiểm soát của Service
-        if (req.file && req.file.path && fs.existsSync(req.file.path)) {
+        if (req.file && req.file.path) {
             try {
-                fs.unlinkSync(req.file.path);
-            } catch (e) {}
+                await fs.promises.unlink(req.file.path);
+            } catch (e) {
+                if (e.code !== "ENOENT") {
+                    console.warn(`⚠️ [Controller Cleanup Warning] Không thể xóa file tạm: ${req.file.path}`, e.message);
+                }
+            }
         }
         next(error);
     }
@@ -144,6 +147,23 @@ export const restoreDocument = async (req, res, next) => {
 
         const user = req.user;
         const result = await documentService.restoreDocument(documentId, user);
+
+        return res
+            .status(result.statusCode)
+            .json(toAPIResponse(result.statusCode, result.message, result.data, result.errors));
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * GET /api/v1/documents/trash
+ * Lấy danh sách tài liệu trong thùng rác của user hiện tại.
+ */
+export const getTrashDocuments = async (req, res, next) => {
+    try {
+        const user = req.user;
+        const result = await documentService.getTrashDocuments(req.query, user);
 
         return res
             .status(result.statusCode)

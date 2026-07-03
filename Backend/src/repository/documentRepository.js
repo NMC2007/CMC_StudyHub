@@ -19,9 +19,6 @@ const defaultRelations = {
     cohort: true,
     faculty: true,
     major: true,
-    likes: true,
-    bookmarks: true,
-    views: true,
 };
 
 /**
@@ -82,9 +79,6 @@ export const searchDocumentsRepo = async (queryParams, user = null) => {
         .leftJoinAndSelect("doc.cohort", "cohort")
         .leftJoinAndSelect("doc.faculty", "faculty")
         .leftJoinAndSelect("doc.major", "major")
-        .leftJoinAndSelect("doc.likes", "likes")
-        .leftJoinAndSelect("doc.bookmarks", "bookmarks")
-        .leftJoinAndSelect("doc.views", "views")
         .where("doc.is_deleted = :isDeleted", { isDeleted: false });
 
     // === Lọc danh sách tài liệu đã đánh dấu (bookmarks) hoặc đã thích (likes) của user ===
@@ -192,6 +186,52 @@ export const searchDocumentsRepo = async (queryParams, user = null) => {
         total,
         page,
         totalPages: Math.ceil(total / limit),
+    };
+};
+
+/**
+ * Lấy danh sách tài liệu trong thùng rác (đã xóa mềm).
+ * @param {Object} queryParams - { q, page, limit }
+ * @param {Object} user - User hiện tại
+ * @returns {Promise<{ documents: Array, total: number, page: number, totalPages: number }>}
+ */
+export const findTrashDocumentsRepo = async (queryParams, user) => {
+    const page = Math.max(1, parseInt(queryParams.page) || 1);
+    const limit = Math.max(1, Math.min(100, parseInt(queryParams.limit) || 10));
+    const skip = (page - 1) * limit;
+
+    const query = documentRepo.createQueryBuilder("doc")
+        .leftJoinAndSelect("doc.owner", "owner")
+        .leftJoinAndSelect("doc.subject", "subject")
+        .leftJoinAndSelect("doc.cohort", "cohort")
+        .leftJoinAndSelect("doc.faculty", "faculty")
+        .leftJoinAndSelect("doc.major", "major")
+        .where("doc.is_deleted = :isDeleted", { isDeleted: true });
+
+    if (user.role !== "ADMIN") {
+        query.andWhere("owner.id = :currentUserId", { currentUserId: user.id });
+    } else if (queryParams.uploader) {
+        query.andWhere("owner.id = :uploaderId", { uploaderId: parseInt(queryParams.uploader) });
+    }
+
+    if (queryParams.q) {
+        query.andWhere(
+            "(unaccent(doc.title) ILIKE unaccent(:keyword) OR unaccent(doc.description) ILIKE unaccent(:keyword))",
+            { keyword: `%${queryParams.q}%` }
+        );
+    }
+
+    query.orderBy("doc.deleted_at", "DESC")
+        .skip(skip)
+        .take(limit);
+
+    const [documents, total] = await query.getManyAndCount();
+
+    return {
+        documents,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit) || 1,
     };
 };
 

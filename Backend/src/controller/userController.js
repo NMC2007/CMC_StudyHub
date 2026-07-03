@@ -55,10 +55,14 @@ export const updateAvatar = async (req, res, next) => {
             .status(result.statusCode)
             .json(toAPIResponse(result.statusCode, result.message, result.data, result.errors));
     } catch (error) {
-        if (req.file && req.file.path && fs.existsSync(req.file.path)) {
+        if (req.file && req.file.path) {
             try {
-                fs.unlinkSync(req.file.path);
-            } catch (e) {}
+                await fs.promises.unlink(req.file.path);
+            } catch (e) {
+                if (e.code !== "ENOENT") {
+                    console.warn(`⚠️ [Controller Cleanup Warning] Không thể xóa file tạm avatar: ${req.file.path}`, e.message);
+                }
+            }
         }
         next(error);
     }

@@ -124,7 +124,7 @@ export const saveRefreshToken = async (userId, token, expiresAt) => {
 export const findRefreshToken = async (token) => {
     return await refreshTokenRepository.findOne({
         where: { token },
-        relations: ["user"],
+        relations: { user: true },
     });
 };
 

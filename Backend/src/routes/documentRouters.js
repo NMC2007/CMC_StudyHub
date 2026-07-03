@@ -30,6 +30,7 @@ import {
     toggleBookmark,
     getBookmarkedDocuments,
     getLikedDocuments,
+    getTrashDocuments,
 } from "#controller/documentController.js";
 import { jwtFilter } from "#config/security/jwtFilter.js";
 import { uploadDocument as uploadDocumentMiddleware } from "#config/security/uploadMiddleware.js";
@@ -54,6 +55,10 @@ documentRouter.get("/bookmarks", getBookmarkedDocuments);
 // @route  GET /api/v1/documents/likes
 // @desc   Lấy danh sách tài liệu đã like của user hiện tại (kèm tìm kiếm & phân trang)
 documentRouter.get("/likes", getLikedDocuments);
+
+// @route  GET /api/v1/documents/trash
+// @desc   Lấy danh sách tài liệu trong thùng rác của user hiện tại
+documentRouter.get("/trash", getTrashDocuments);
 
 // ==========================================
 // API CRUD TÀI LIỆU & TƯƠNG TÁC THEO ID
