@@ -1,0 +1,62 @@
+### ============================================
+### CRON AUTOMATION & ADMIN TRIGGER API TESTS
+### ============================================
+### Cấu hình biến chung cho toàn bộ các test cases bên dưới
+@baseUrl = http://localhost:8081/api/v1
+@contentType = application/json
+
+### LƯU Ý: Đăng nhập tài khoản ADMIN để lấy token gán vào biến bên dưới
+@adminToken = <YOUR_ADMIN_ACCESS_TOKEN_HERE>
+@studentToken = <YOUR_STUDENT_ACCESS_TOKEN_HERE>
+
+---
+
+### ============================================
+### 1. KIỂM THỬ KÍCH HOẠT THỦ CÔNG TÁC VỤ DỌN RÁC (TRASH CLEANUP)
+### ============================================
+
+### 1.1. Admin kích hoạt dọn dẹp thùng rác quá hạn (Mặc định 15 ngày)
+# @name triggerTrashCleanupDefault
+POST {{baseUrl}}/admin/cron/trigger/trash-cleanup
+Content-Type: {{contentType}}
+Authorization: Bearer {{adminToken}}
+
+{
+  "days": 15
+}
+
+### 1.2. Admin kích hoạt dọn dẹp thùng rác thử nghiệm (Xóa ngay các tài liệu vừa vào thùng rác - 0 ngày)
+# @name triggerTrashCleanupImmediate
+POST {{baseUrl}}/admin/cron/trigger/trash-cleanup
+Content-Type: {{contentType}}
+Authorization: Bearer {{adminToken}}
+
+{
+  "days": 0
+}
+
+### 1.3. Kiểm thử phân quyền: Sinh viên cố gắng kích hoạt dọn rác (Dự kiến từ chối HTTP 403)
+# @name triggerTrashCleanupForbidden
+POST {{baseUrl}}/admin/cron/trigger/trash-cleanup
+Content-Type: {{contentType}}
+Authorization: Bearer {{studentToken}}
+
+{
+  "days": 15
+}
+
+---
+
+### ============================================
+### 2. KIỂM THỬ KÍCH HOẠT THỦ CÔNG TÁC VỤ DỌN REFRESH TOKEN HẾT HẠN
+### ============================================
+
+### 2.1. Admin kích hoạt dọn dẹp Refresh Token hết hạn
+# @name triggerTokenCleanup
+POST {{baseUrl}}/admin/cron/trigger/token-cleanup
+Authorization: Bearer {{adminToken}}
+
+### 2.2. Kiểm thử phân quyền: Sinh viên cố gắng dọn dẹp token (Dự kiến từ chối HTTP 403)
+# @name triggerTokenCleanupForbidden
+POST {{baseUrl}}/admin/cron/trigger/token-cleanup
+Authorization: Bearer {{studentToken}}

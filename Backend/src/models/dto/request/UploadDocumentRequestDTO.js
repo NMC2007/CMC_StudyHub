@@ -12,8 +12,8 @@ import { validateRequired } from "#utils/validationHelper.js";
 // Danh sách loại tài liệu hợp lệ
 const VALID_DOC_TYPES = ["DOCUMENT", "ASSIGNMENT", "EXAM", "SLIDE", "REFERENCE"];
 
-// Danh sách quyền truy cập hợp lệ
-const VALID_VISIBILITIES = ["PUBLIC", "GROUP", "PRIVATE"];
+// Danh sách quyền truy cập hợp lệ cho API upload chung (không chấp nhận GROUP)
+const VALID_VISIBILITIES = ["PUBLIC", "PRIVATE"];
 
 /**
  * Validate request body cho API upload tài liệu.
@@ -42,7 +42,9 @@ export const validateUploadDocumentRequest = (body) => {
     // === visibility — tùy chọn, nhưng nếu có phải hợp lệ ===
     if (body.visibility) {
         const vis = String(body.visibility).trim().toUpperCase();
-        if (!VALID_VISIBILITIES.includes(vis)) {
+        if (vis === "GROUP") {
+            errors.push("Để đăng tải tài liệu nội bộ nhóm (GROUP), vui lòng sử dụng API dành riêng cho Nhóm học tập (/api/v1/groups/:id/documents/upload).");
+        } else if (!VALID_VISIBILITIES.includes(vis)) {
             errors.push(`Quyền truy cập không hợp lệ. Chỉ chấp nhận: ${VALID_VISIBILITIES.join(", ")}.`);
         }
     }
@@ -89,7 +91,9 @@ export const validateUpdateDocumentRequest = (body) => {
     // === visibility — nếu có thì phải hợp lệ ===
     if (hasVisibility && body.visibility) {
         const vis = String(body.visibility).trim().toUpperCase();
-        if (!VALID_VISIBILITIES.includes(vis)) {
+        if (vis === "GROUP") {
+            errors.push("Không thể chuyển quyền truy cập sang nội bộ nhóm (GROUP) ở API chung. Vui lòng chia sẻ vào nhóm thông qua API của Nhóm học tập.");
+        } else if (!VALID_VISIBILITIES.includes(vis)) {
             errors.push(`Quyền truy cập không hợp lệ. Chỉ chấp nhận: ${VALID_VISIBILITIES.join(", ")}.`);
         }
     }

@@ -22,6 +22,9 @@ import authRouter from "./routes/authRouters.js";
 import userRouter from "./routes/userRouters.js";
 import academicRouter from "./routes/academicRouters.js";
 import documentRouter from "./routes/documentRouters.js";
+import groupRouter from "./routes/groupRouters.js";
+import cronRouter from "./routes/cronRouters.js";
+import { initCronJobs } from "./jobs/cronJobs.js";
 import { errorHandler } from "./advice/errorHandler.js";
 
 // === Load biến môi trường từ file .env ===
@@ -60,8 +63,11 @@ app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/academic", academicRouter);
 app.use("/api/v1/documents", documentRouter);
+app.use("/api/v1/groups", groupRouter);
+app.use("/api/v1/admin/cron", cronRouter);
 
 // ==========================================
+
 // GLOBAL ERROR HANDLER
 // ==========================================
 // Phải đặt SAU tất cả routes.
@@ -75,6 +81,9 @@ app.use(errorHandler);
 // connectDB() sẽ khởi tạo TypeORM DataSource (synchronize + logging).
 // Chỉ khi kết nối DB thành công, server mới bắt đầu lắng nghe request.
 connectDB().then(() => {
+    // Khởi động bộ lập lịch Node-Cron
+    initCronJobs();
+
     app.listen(PORT, () => {
         console.log(`🚀 Server đang chạy tại: http://localhost:${PORT}`);
         console.log(`🌐 CORS: Đã cho phép http://localhost:${process.env.FRONTEND_PORT}`);

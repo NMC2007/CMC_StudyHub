@@ -202,7 +202,7 @@ export const getDocumentDetail = async (documentId, user) => {
     }
 
     // === Bảo vệ quyền riêng tư theo Visibility (Security Guard) ===
-    const visibilityError = checkDocumentVisibilityAccess(document, user);
+    const visibilityError = await checkDocumentVisibilityAccess(document, user);
     if (visibilityError) return visibilityError;
 
     // Ghi nhận lượt xem (chỉ khi user đã đăng nhập)
@@ -458,7 +458,7 @@ export const searchDocuments = async (queryParams, user = null) => {
  * @param {Object|null} user
  * @returns {Object|null} Lỗi nếu vi phạm quyền, null nếu hợp lệ
  */
-const checkDocumentVisibilityAccess = (document, user) => {
+const checkDocumentVisibilityAccess = async (document, user) => {
     if (document.visibility === "PRIVATE") {
         const isOwnerOrAdmin = user && (document.owner?.id === user.id || user.role === "ADMIN");
         if (!isOwnerOrAdmin) {
@@ -470,24 +470,24 @@ const checkDocumentVisibilityAccess = (document, user) => {
             };
         }
     } else if (document.visibility === "GROUP") {
-        const isOwnerOrAdminOrLecturer = user && (
-            document.owner?.id === user.id ||
-            user.role === "ADMIN" ||
-            user.role === "LECTURER"
-        );
-        const isSameGroupStudent = user && user.role === "STUDENT" && (
-            (document.cohort && document.cohort.id === user.cohort_id) ||
-            (document.faculty && document.faculty.id === user.faculty_id) ||
-            (document.major && document.major.id === user.major_id)
-        );
+        const isOwnerOrAdmin = user && (document.owner?.id === user.id || user.role === "ADMIN");
+        if (!isOwnerOrAdmin) {
+            const hasGroupAccess = await AppDataSource.getRepository("GroupDocument")
+                .createQueryBuilder("gd")
+                .leftJoin("group_members", "gm", "gd.group_id = gm.group_id")
+                .leftJoin("groups", "g", "gd.group_id = g.id")
+                .where("gd.document_id = :docId", { docId: document.id })
+                .andWhere("(gm.user_id = :userId OR g.owner_id = :userId)", { userId: user?.id || -1 })
+                .getExists();
 
-        if (!isOwnerOrAdminOrLecturer && !isSameGroupStudent) {
-            return {
-                statusCode: 403,
-                message: "Tài liệu này lưu hành nội bộ nhóm/khóa (GROUP), bạn không thuộc nhóm được phép thao tác.",
-                data: null,
-                errors: ["Permission Denied — Group Document"],
-            };
+            if (!hasGroupAccess) {
+                return {
+                    statusCode: 403,
+                    message: "Tài liệu này lưu hành nội bộ nhóm học tập (GROUP), bạn không phải thành viên nhóm nên không có quyền truy cập.",
+                    data: null,
+                    errors: ["Permission Denied — Group Document"],
+                };
+            }
         }
     }
     return null;
@@ -510,7 +510,7 @@ export const toggleLikeDocument = async (documentId, user) => {
         };
     }
 
-    const visibilityError = checkDocumentVisibilityAccess(document, user);
+    const visibilityError = await checkDocumentVisibilityAccess(document, user);
     if (visibilityError) return visibilityError;
 
     const existingLike = await findLike(user.id, documentId);
@@ -554,7 +554,7 @@ export const toggleBookmarkDocument = async (documentId, user) => {
         };
     }
 
-    const visibilityError = checkDocumentVisibilityAccess(document, user);
+    const visibilityError = await checkDocumentVisibilityAccess(document, user);
     if (visibilityError) return visibilityError;
 
     const existingBookmark = await findBookmark(user.id, documentId);

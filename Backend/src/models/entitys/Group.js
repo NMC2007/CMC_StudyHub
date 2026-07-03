@@ -39,5 +39,12 @@ export const Group = new EntitySchema({
             target: "GroupMember",
             inverseSide: "group",
         },
+        // === Tài liệu chia sẻ trong nhóm ===
+        sharedDocuments: {
+            type: "one-to-many",
+            target: "GroupDocument",
+            inverseSide: "group",
+        },
     },
 });
+

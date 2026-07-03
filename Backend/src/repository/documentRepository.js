@@ -99,33 +99,25 @@ export const searchDocumentsRepo = async (queryParams, user = null) => {
             }
         } else if (vis === "GROUP") {
             query.andWhere("doc.visibility::text = :vis", { vis: "GROUP" });
-            if (!user || user.role === "STUDENT") {
+            if (!user || user.role !== "ADMIN") {
+                // Chỉ hiển thị tài liệu GROUP nếu người dùng là thành viên/chủ sở hữu của nhóm chứa tài liệu đó hoặc chính chủ tài liệu
                 query.andWhere(
-                    "(owner.id = :currentUserId OR doc.cohort_id = :cohortId OR doc.faculty_id = :facultyId OR doc.major_id = :majorId)",
-                    {
-                        currentUserId: user?.id || -1,
-                        cohortId: user?.cohort_id || -1,
-                        facultyId: user?.faculty_id || -1,
-                        majorId: user?.major_id || -1,
-                    }
+                    "(owner.id = :currentUserId OR EXISTS (SELECT 1 FROM group_documents gd JOIN group_members gm ON gd.group_id = gm.group_id WHERE gd.document_id = doc.id AND gm.user_id = :currentUserId) OR EXISTS (SELECT 1 FROM group_documents gd JOIN groups g ON gd.group_id = g.id WHERE gd.document_id = doc.id AND g.owner_id = :currentUserId))",
+                    { currentUserId: user?.id || -1 }
                 );
             }
         } else {
             query.andWhere("doc.visibility::text = :vis", { vis: "PUBLIC" });
         }
     } else {
-        // Mặc định không truyền visibility: Trả về PUBLIC + GROUP hợp lệ + PRIVATE chính chủ
+        // Mặc định không truyền visibility: Trả về PUBLIC + PRIVATE chính chủ (Ẩn tài liệu GROUP khỏi API search thông thường)
         if (user && user.role === "ADMIN") {
             // Admin thấy tất cả
         } else if (user) {
             query.andWhere(
-                "(doc.visibility::text = 'PUBLIC' OR (doc.visibility::text = 'PRIVATE' AND owner.id = :currentUserId) OR (doc.visibility::text = 'GROUP' AND (owner.id = :currentUserId OR :role != 'STUDENT' OR doc.cohort_id = :cohortId OR doc.faculty_id = :facultyId OR doc.major_id = :majorId)))",
+                "(doc.visibility::text = 'PUBLIC' OR (doc.visibility::text = 'PRIVATE' AND owner.id = :currentUserId))",
                 {
                     currentUserId: user.id,
-                    role: user.role,
-                    cohortId: user.cohort_id || -1,
-                    facultyId: user.faculty_id || -1,
-                    majorId: user.major_id || -1,
                 }
             );
         } else {
@@ -233,6 +225,21 @@ export const findTrashDocumentsRepo = async (queryParams, user) => {
         page,
         totalPages: Math.ceil(total / limit) || 1,
     };
+};
+
+/**
+ * Tìm các tài liệu trong thùng rác đã quá hạn x ngày (Dùng cho dọn rác cronjob).
+ * @param {number} days - Số ngày giới hạn trong thùng rác (mặc định 15 ngày)
+ * @returns {Promise<Array>}
+ */
+export const findExpiredTrashDocumentsRepo = async (days = 15) => {
+    const thresholdDate = new Date();
+    thresholdDate.setDate(thresholdDate.getDate() - days);
+
+    return await documentRepo.createQueryBuilder("doc")
+        .where("doc.is_deleted = :isDeleted", { isDeleted: true })
+        .andWhere("doc.deleted_at <= :thresholdDate", { thresholdDate })
+        .getMany();
 };
 
 /**

@@ -167,5 +167,12 @@ export const Document = new EntitySchema({
             target: "DocumentView",
             inverseSide: "document",
         },
+        // === Một tài liệu được chia sẻ vào nhiều nhóm ===
+        groupShares: {
+            type: "one-to-many",
+            target: "GroupDocument",
+            inverseSide: "document",
+        },
     },
 });
+

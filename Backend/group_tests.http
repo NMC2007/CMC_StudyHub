@@ -1,0 +1,190 @@
+### ============================================
+### GROUP MODULE API TESTS (STUDY GROUPS)
+### ============================================
+### Cấu hình biến chung cho toàn bộ các test cases bên dưới
+@baseUrl = http://localhost:8081/api/v1
+@contentType = application/json
+
+### LƯU Ý: Chạy login trước để lấy accessToken gán vào biến bên dưới
+@accessToken = <YOUR_ACCESS_TOKEN_HERE>
+@studentToken = <YOUR_STUDENT_ACCESS_TOKEN_HERE>
+
+---
+
+### ============================================
+### 1. QUẢN LÝ NHÓM HỌC TẬP (CRUD GROUPS)
+### ============================================
+
+### 1.1. Tạo nhóm học tập mới
+# @name createGroup
+POST {{baseUrl}}/groups
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "name": "Nhóm Học Tập Lập Trình Java K18",
+  "description": "Chia sẻ tài liệu, bài tập lớn môn IT3011 Lập trình Java."
+}
+
+### 1.2. Lấy danh sách nhóm học tập của tôi (Owner hoặc Member)
+# @name getMyGroups
+GET {{baseUrl}}/groups
+Authorization: Bearer {{accessToken}}
+
+### 1.3. Lấy chi tiết nhóm học tập kèm danh sách thành viên
+# @name getGroupDetail
+GET {{baseUrl}}/groups/1
+Authorization: Bearer {{accessToken}}
+
+---
+
+### ============================================
+### 2. QUẢN LÝ THÀNH VIÊN NHÓM (MEMBERS)
+### ============================================
+
+### 2.1. Thêm nhiều thành viên vào nhóm cùng lúc (Batch Add)
+# @name addGroupMembers
+POST {{baseUrl}}/groups/1/members
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "user_ids": [2, 3, 4]
+}
+
+### 2.2. Xóa một thành viên ra khỏi nhóm (Chỉ Owner)
+# @name removeGroupMember
+DELETE {{baseUrl}}/groups/1/members/3
+Authorization: Bearer {{accessToken}}
+
+---
+
+### ============================================
+### 3. CHIA SẺ & QUẢN LÝ TÀI LIỆU NHÓM (GROUP DOCUMENTS)
+### ============================================
+
+### 3.1. Upload trực tiếp tài liệu vào nhóm (Tự động gắn tag GROUP & chia sẻ vào nhóm)
+# @name uploadGroupDocument
+POST {{baseUrl}}/groups/1/documents/upload
+Authorization: Bearer {{accessToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryGroupUpload
+
+------WebKitFormBoundaryGroupUpload
+Content-Disposition: form-data; name="title"
+
+Tài liệu ôn thi nội bộ Nhóm 1 (Mật)
+------WebKitFormBoundaryGroupUpload
+Content-Disposition: form-data; name="subject_id"
+
+1
+------WebKitFormBoundaryGroupUpload
+Content-Disposition: form-data; name="document_type"
+
+EXAM
+------WebKitFormBoundaryGroupUpload
+Content-Disposition: form-data; name="cohort_id"
+
+1
+------WebKitFormBoundaryGroupUpload
+Content-Disposition: form-data; name="faculty_id"
+
+1
+------WebKitFormBoundaryGroupUpload
+Content-Disposition: form-data; name="major_id"
+
+1
+------WebKitFormBoundaryGroupUpload
+Content-Disposition: form-data; name="file"; filename="group_exam.pdf"
+Content-Type: application/pdf
+
+< ./dummy.pdf
+------WebKitFormBoundaryGroupUpload--
+
+### 3.2. Chia sẻ tài liệu PUBLIC/PRIVATE có sẵn vào nhóm
+# @name shareDocumentToGroup
+POST {{baseUrl}}/groups/1/documents
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "document_id": 1
+}
+
+### 3.3. Lấy danh sách tài liệu chia sẻ trong nhóm (Chỉ thành viên nhóm)
+# @name getGroupDocuments
+GET {{baseUrl}}/groups/1/documents?page=1&limit=10
+Authorization: Bearer {{accessToken}}
+
+### 3.4. Lấy danh sách tài liệu nhóm bằng tài khoản thành viên (Kiểm thử bảo mật)
+# @name getGroupDocumentsAsMember
+GET {{baseUrl}}/groups/1/documents
+Authorization: Bearer {{studentToken}}
+
+### 3.5. Gỡ tài liệu chia sẻ khỏi nhóm
+# @name removeDocumentFromGroup
+DELETE {{baseUrl}}/groups/1/documents/1
+Authorization: Bearer {{accessToken}}
+
+---
+
+### ============================================
+### 4. KIỂM THỬ BẢO MẬT & PHÂN QUYỀN TÀI LIỆU NHÓM (SECURITY TESTS)
+### ============================================
+
+### 4.1. Kiểm thử từ chối tag GROUP tại API Upload tài liệu chung (/api/v1/documents/upload)
+# @name testRejectGroupInGeneralUpload
+POST {{baseUrl}}/documents/upload
+Authorization: Bearer {{accessToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryRejectGroup
+
+------WebKitFormBoundaryRejectGroup
+Content-Disposition: form-data; name="title"
+
+Tài liệu kiểm thử cấm GROUP upload chung
+------WebKitFormBoundaryRejectGroup
+Content-Disposition: form-data; name="subject_id"
+
+1
+------WebKitFormBoundaryRejectGroup
+Content-Disposition: form-data; name="cohort_id"
+
+1
+------WebKitFormBoundaryRejectGroup
+Content-Disposition: form-data; name="faculty_id"
+
+1
+------WebKitFormBoundaryRejectGroup
+Content-Disposition: form-data; name="major_id"
+
+1
+------WebKitFormBoundaryRejectGroup
+Content-Disposition: form-data; name="visibility"
+
+GROUP
+------WebKitFormBoundaryRejectGroup
+Content-Disposition: form-data; name="file"; filename="test.pdf"
+Content-Type: application/pdf
+
+< ./dummy.pdf
+------WebKitFormBoundaryRejectGroup--
+
+### 4.2. Kiểm thử tìm kiếm chung (/api/v1/documents/search) - Đảm bảo tài liệu GROUP bị ẩn
+# @name testSearchGeneralHideGroupDocs
+GET {{baseUrl}}/documents/search?page=1&limit=10
+Authorization: Bearer {{studentToken}}
+
+### 4.3. Kiểm thử người ngoài nhóm cố gắng xem chi tiết tài liệu mang tag GROUP (Dự kiến 403 Forbidden)
+# @name testOutsiderViewGroupDoc
+GET {{baseUrl}}/documents/105
+Authorization: Bearer {{studentToken}}
+
+---
+
+### ============================================
+### 5. GIẢI TÁN NHÓM (DISBAND GROUP & SOFT DELETE GROUP DOCS)
+### ============================================
+
+### 5.1. Giải tán nhóm học tập (Tự động xóa mềm tài liệu nội bộ GROUP)
+# @name disbandGroup
+DELETE {{baseUrl}}/groups/1
+Authorization: Bearer {{accessToken}}

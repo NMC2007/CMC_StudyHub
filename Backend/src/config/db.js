@@ -24,6 +24,7 @@ import { GroupMember } from "#models/entitys/GroupMember.js";
 import { DocumentLike } from "#models/entitys/DocumentLike.js";
 import { Bookmark } from "#models/entitys/Bookmark.js";
 import { DocumentView } from "#models/entitys/DocumentView.js";
+import { GroupDocument } from "#models/entitys/GroupDocument.js";
 
 dotenv.config();
 
@@ -61,11 +62,13 @@ export const AppDataSource = new DataSource({
         Document,
         Group,
         GroupMember,
+        GroupDocument,
         DocumentLike,
         Bookmark,
         DocumentView,
     ],
 });
+
 
 /**
  * connectDB - Hàm khởi tạo kết nối TypeORM DataSource.
