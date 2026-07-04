@@ -10,6 +10,7 @@ import {
     findUserProfileById,
     findUserByPhoneExcludingId,
     updateUserById,
+    findAllUsersProfile,
 } from "#repository/userRepository.js";
 import { validateUpdateProfileRequest } from "#models/dto/request/UpdateProfileRequestDTO.js";
 import { toUserResponse } from "#models/dto/response/UserResponseDTO.js";
@@ -170,6 +171,22 @@ export const updateUserAvatar = async (userId, file) => {
         statusCode: 200,
         message: "Cập nhật ảnh đại diện thành công!",
         data: toUserResponse(updatedUser),
+        errors: null,
+    };
+};
+
+/**
+ * Lấy danh sách toàn bộ người dùng.
+ * @returns {Promise<{ statusCode: number, message: string, data: Object[], errors: string[]|null }>}
+ */
+export const getAllUsers = async () => {
+    const users = await findAllUsersProfile();
+    const mappedUsers = users.map(toUserResponse);
+
+    return {
+        statusCode: 200,
+        message: "Lấy danh sách người dùng thành công.",
+        data: mappedUsers,
         errors: null,
     };
 };

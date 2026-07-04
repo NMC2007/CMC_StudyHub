@@ -73,3 +73,12 @@ Content-Type: {{contentType}}
 {
   "dob": "2030-01-01"
 }
+
+
+### =========================================================================
+### 3. LẤY DANH SÁCH TOÀN BỘ NGƯỜI DÙNG (GET /api/v1/users) - CHỈ ADMIN
+### =========================================================================
+
+### 3.1 Lấy danh sách thành công (Cần có quyền ADMIN)
+GET {{baseUrl}}/users
+Authorization: Bearer {{accessToken}}

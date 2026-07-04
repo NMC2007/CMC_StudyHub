@@ -7,8 +7,9 @@
  */
 
 import express from "express";
-import { getProfile, updateProfile, updateAvatar } from "#controller/userController.js";
+import { getProfile, updateProfile, updateAvatar, getAllUsers } from "#controller/userController.js";
 import { jwtFilter } from "#config/security/jwtFilter.js";
+import { rbac } from "#config/security/rbacMiddleware.js";
 import { uploadAvatar } from "#config/security/uploadMiddleware.js";
 
 const userRouter = express.Router();
@@ -30,5 +31,10 @@ userRouter.put("/profile", updateProfile);
 // @desc   Upload ảnh đại diện mới
 // @access Private
 userRouter.put("/avatar", uploadAvatar.single("avatar"), updateAvatar);
+
+// @route  GET /api/v1/users
+// @desc   Lấy danh sách toàn bộ người dùng
+// @access Private (Chỉ ADMIN)
+userRouter.get("/", rbac("ADMIN"), getAllUsers);
 
 export default userRouter;

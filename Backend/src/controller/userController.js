@@ -67,3 +67,19 @@ export const updateAvatar = async (req, res, next) => {
         next(error);
     }
 };
+
+/**
+ * GET /api/v1/users
+ * Lấy danh sách toàn bộ người dùng (Chỉ ADMIN)
+ */
+export const getAllUsers = async (req, res, next) => {
+    try {
+        const result = await userService.getAllUsers();
+
+        return res
+            .status(result.statusCode)
+            .json(toAPIResponse(result.statusCode, result.message, result.data, result.errors));
+    } catch (error) {
+        next(error);
+    }
+};

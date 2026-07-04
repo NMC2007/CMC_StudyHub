@@ -47,3 +47,14 @@ export const updateUserById = async (id, updateData) => {
     });
     return await findUserProfileById(id);
 };
+
+/**
+ * Lấy danh sách toàn bộ người dùng (kèm quan hệ).
+ * @returns {Promise<Object[]>}
+ */
+export const findAllUsersProfile = async () => {
+    return await userRepository.find({
+        relations: { cohort: true, faculty: true, major: true },
+        order: { id: "DESC" },
+    });
+};

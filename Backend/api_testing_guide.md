@@ -1,0 +1,247 @@
+# TÀI LIỆU HƯỚNG DẪN KIỂM THỬ API STUDYHUB BACKEND
+
+Tài liệu này tổng hợp toàn bộ các API đang được cung cấp bởi tầng Backend của hệ thống StudyHub. Tài liệu được dùng làm cẩm nang cho việc xây dựng Frontend.
+
+**Base URL:** `http://localhost:8081/api/v1`
+
+---
+
+## 1. MODULE AUTHENTICATION (XÁC THỰC)
+
+### 1.1. Đăng ký tài khoản
+
+- **Endpoint:** `POST /auth/register`
+- **Quyền (Access):** Public
+- **Body (`application/json`):**
+  ```json
+  {
+    "full_name": "Nguyễn Văn A",
+    "username": "nva2004",
+    "email": "nva@studyhub.edu.vn",
+    "phone": "0912345678",
+    "dob": "2004-05-20",
+    "password": "Password@123",
+    "role": "STUDENT",
+    "cohort_code": "K1", // Bắt buộc nếu là STUDENT
+    "faculty_code": "CNTT", // Bắt buộc nếu là STUDENT/LECTURER
+    "major_code": "BIT" // Bắt buộc nếu là STUDENT
+  }
+  ```
+  _(Ghi chú: Nếu `role` là `LECTURER`, chỉ cần cung cấp `faculty_code`)_
+
+### 1.2. Đăng nhập
+
+- **Endpoint:** `POST /auth/login`
+- **Quyền:** Public
+- **Body (`application/json`):**
+  ```json
+  {
+    "identifier": "nva@studyhub.edu.vn", // Có thể truyền Email HOẶC Username
+    "password": "Password@123"
+  }
+  ```
+- **Response quan trọng:** Trả về đối tượng `user` cùng `accessToken` (để gọi API) và `refreshToken` (để làm mới token).
+
+### 1.3. Làm mới Access Token
+
+- **Endpoint:** `POST /auth/refresh`
+- **Quyền:** Public
+- **Body (`application/json`):**
+  ```json
+  {
+    "refreshToken": "YOUR_REFRESH_TOKEN_HERE"
+  }
+  ```
+
+### 1.4. Đăng xuất
+
+- **Endpoint:** `POST /auth/logout`
+- **Quyền:** Public
+- **Body (`application/json`):**
+  ```json
+  {
+    "refreshToken": "YOUR_REFRESH_TOKEN_HERE"
+  }
+  ```
+
+---
+
+## 2. MODULE USER PROFILE (HỒ SƠ NGƯỜI DÙNG)
+
+_(Lưu ý: Bắt đầu từ đây, mọi API yêu cầu đính kèm Header: `Authorization: Bearer {accessToken}`)_
+
+### 2.1. Lấy thông tin cá nhân
+
+- **Endpoint:** `GET /users/profile`
+- **Quyền:** Mọi User đăng nhập
+
+### 2.2. Lấy danh sách toàn bộ người dùng
+
+- **Endpoint:** `GET /users`
+- **Quyền:** Chỉ Admin (`ADMIN`)
+- **Mô tả:** Trả về danh sách toàn bộ tài khoản trong hệ thống kèm thông tin Khóa/Khoa/Ngành.
+
+### 2.3. Cập nhật thông tin cá nhân
+
+- **Endpoint:** `PUT /users/profile`
+- **Body (`application/json`):**
+  ```json
+  {
+    "full_name": "Tên mới",
+    "phone": "0988776655",
+    "dob": "2004-12-28"
+  }
+  ```
+
+### 2.4. Cập nhật Avatar
+
+- **Endpoint:** `PUT /users/avatar`
+- **Quyền:** Mọi User đăng nhập
+- **Body (`multipart/form-data`):**
+  - `avatar`: Chọn file ảnh (jpg, jpeg, png, webp). Tối đa 5MB.
+
+---
+
+## 3. MODULE TÀI LIỆU (DOCUMENTS)
+
+### 3.1. Upload tài liệu mới
+
+- **Endpoint:** `POST /documents/upload`
+- **Quyền:** Mọi User. **(Upload Guard:** Sinh viên chỉ được upload đúng Khóa/Khoa/Ngành của mình).
+- **Body (`multipart/form-data`):**
+  - `file`: File tài liệu (pdf, docx, pptx, zip). Tối đa 50MB.
+  - `title`: "Tiêu đề tài liệu"
+  - `description`: "Mô tả ngắn"
+  - `subject_id`: 1
+  - `cohort_id`: 1 (Tuỳ chọn với Giảng viên, bắt buộc với Sinh viên)
+  - `faculty_id`: 1
+  - `major_id`: 1
+  - `document_type`: "DOCUMENT" / "ASSIGNMENT" / "EXAM" / "SLIDE" / "REFERENCE"
+  - `visibility`: "PUBLIC" / "GROUP" / "PRIVATE"
+
+### 3.2. Tìm kiếm & Lọc (Advanced Search)
+
+- **Endpoint:** `GET /documents/search`
+- **Quyền:** Mọi User.
+- **Query Parameters (Tuỳ chọn):**
+  - `q`: Từ khóa tìm kiếm (VD: `java`).
+  - `uploader`: Tên/username người đăng.
+  - `role`: `LECTURER` hoặc `STUDENT`.
+  - `cohort_id`, `faculty_id`, `major_id`, `subject_id`: Lọc theo ID học thuật.
+  - `type`: Loại tài liệu.
+  - `page`, `limit`: Phân trang.
+
+### 3.3. Xem chi tiết tài liệu (Tự động tăng view_count)
+
+- **Endpoint:** `GET /documents/:id`
+- **Quyền:** Mọi User (Áp dụng Security Guard Visibility).
+
+### 3.4. Cập nhật tài liệu
+
+- **Endpoint:** `PUT /documents/:id`
+- **Quyền:** Chủ sở hữu (Owner) hoặc ADMIN.
+- **Body (`application/json`):**
+  ```json
+  {
+    "title": "Tiêu đề cập nhật",
+    "description": "Mô tả cập nhật",
+    "visibility": "PRIVATE",
+    "document_type": "EXAM"
+  }
+  ```
+
+### 3.5. Xóa mềm (Soft Delete)
+
+- **Endpoint:** `DELETE /documents/:id`
+- **Quyền:** Owner hoặc ADMIN. (Chuyển tài liệu vào thùng rác).
+
+### 3.6. Xem thùng rác & Khôi phục
+
+- **Endpoint:** `GET /documents/trash` (Xem danh sách tài liệu đã xóa mềm).
+- **Endpoint:** `POST /documents/:id/restore` (Khôi phục tài liệu, yêu cầu Owner/Admin).
+
+### 3.7. Like & Bookmark
+
+- **Toggle Like:** `POST /documents/:id/like`
+- **Toggle Bookmark:** `POST /documents/:id/bookmark`
+- **Lấy danh sách đã Like:** `GET /documents/likes`
+- **Lấy danh sách đã Bookmark:** `GET /documents/bookmarks`
+
+---
+
+## 4. MODULE NHÓM HỌC TẬP (STUDY GROUPS)
+
+### 4.1. Tạo Nhóm & Lấy danh sách nhóm
+
+- **Tạo nhóm mới:** `POST /groups`
+  ```json
+  { "name": "Nhóm Java", "description": "Chia sẻ môn Java" }
+  ```
+- **Lấy danh sách nhóm của tôi:** `GET /groups`
+- **Lấy chi tiết nhóm:** `GET /groups/:id`
+
+### 4.2. Quản lý Thành viên
+
+- **Thêm thành viên (Batch):** `POST /groups/:id/members`
+  ```json
+  { "user_ids": [2, 3, 4] }
+  ```
+- **Gỡ thành viên:** `DELETE /groups/:id/members/:userId`
+
+### 4.3. Quản lý Tài liệu Nhóm
+
+- **Chia sẻ tài liệu có sẵn vào nhóm:** `POST /groups/:id/documents`
+  ```json
+  { "document_id": 1 }
+  ```
+- **Upload trực tiếp vào nhóm:** `POST /groups/:id/documents/upload`
+  _(Dùng multipart/form-data tương tự API `POST /documents/upload`, tự động được gán tag `GROUP` và link vào nhóm)._
+- **Lấy danh sách tài liệu nhóm:** `GET /groups/:id/documents`
+- **Gỡ tài liệu khỏi nhóm:** `DELETE /groups/:id/documents/:documentId`
+
+### 4.4. Giải tán Nhóm
+
+- **Endpoint:** `DELETE /groups/:id`
+- **Lưu ý:** Tự động xóa mềm toàn bộ tài liệu có tag `GROUP` tải lên riêng cho nhóm này.
+
+---
+
+## 5. MODULE ACADEMIC (CẤU TRÚC HỌC THUẬT)
+
+_(Dùng cho trang Quản trị viên, GET là Public, POST/PUT/DELETE yêu cầu quyền ADMIN)._
+
+### 5.1. Cohorts (Khóa học)
+
+- **GET** `/academic/cohorts`
+- **POST/PUT** `/academic/cohorts` (`{ "code": "K1", "name": "Khóa 1", "start_year": 2023, "end_year": 2027 }`)
+- **DELETE** `/academic/cohorts/:id`
+
+### 5.2. Faculties (Khoa)
+
+- **GET** `/academic/faculties`
+- **POST/PUT** `/academic/faculties` (`{ "code": "CNTT", "name": "Khoa CNTT" }`)
+- **DELETE** `/academic/faculties/:id`
+
+### 5.3. Majors (Ngành học)
+
+- **GET** `/academic/majors?faculty_code=CNTT`
+- **POST/PUT** `/academic/majors` (`{ "code": "BIT", "name": "Ngành IT", "faculty_code": "CNTT" }`)
+- **DELETE** `/academic/majors/:id`
+
+### 5.4. Subjects (Môn học)
+
+- **GET** `/academic/subjects?major_code=BIT`
+- **POST/PUT** `/academic/subjects` (`{ "code": "IT101", "name": "Java", "major_codes": ["BIT", "BAI"] }`)
+- **DELETE** `/academic/subjects/:id`
+
+---
+
+## 6. MODULE ADMIN CRON TRIGGERS (BẢO TRÌ TỰ ĐỘNG)
+
+_(Yêu cầu quyền ADMIN)_
+
+- **Dọn dẹp tài liệu trong thùng rác quá hạn (Mặc định >15 ngày):**
+  - **Endpoint:** `POST /admin/cron/trigger/trash-cleanup`
+  - **Body (`application/json`):** `{ "days": 15 }` (Hoặc 0 để dọn rác ngay lập tức).
+- **Dọn dẹp Refresh Token hết hạn:**
+  - **Endpoint:** `POST /admin/cron/trigger/token-cleanup`
