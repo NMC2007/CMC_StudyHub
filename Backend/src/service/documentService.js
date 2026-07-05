@@ -16,8 +16,8 @@
  *   - LECTURER / ADMIN: Được phép upload vào bất kỳ Khóa/Khoa/Ngành.
  */
 
-import fs from "fs";
 import path from "path";
+import { cleanupFile, validateStudentUploadContext } from "#utils/uploadGuard.js";
 import { AppDataSource } from "#config/db.js";
 import {
     saveDocument,
@@ -75,70 +75,10 @@ export const uploadDocument = async (user, file, body) => {
         };
     }
 
-    // Bước 3: UPLOAD GUARD — Kiểm tra quyền nghiệp vụ cho STUDENT
-    // Đặc tả: Sinh viên chỉ được upload tài liệu vào đúng Khóa/Khoa/Ngành của mình.
-    // Nếu lệch bất kỳ 1 trường nào → 403 Forbidden.
-    if (user.role === "STUDENT") {
-        const cohortId = parseInt(body.cohort_id);
-        const facultyId = parseInt(body.faculty_id);
-        const majorId = parseInt(body.major_id);
-
-        // Sinh viên bắt buộc phải gửi đủ cohort_id, faculty_id, major_id
-        if (!cohortId || !facultyId || !majorId) {
-            await cleanupFile(file.path);
-            return {
-                statusCode: 400,
-                message: "Sinh viên phải cung cấp đầy đủ Khóa (cohort_id), Khoa (faculty_id) và Ngành (major_id) khi upload tài liệu.",
-                data: null,
-                errors: ["Missing Academic Context for Student Upload"],
-            };
-        }
-
-        // Đối chiếu với thông tin học thuật của sinh viên trong JWT payload
-        const mismatchFields = [];
-        if (cohortId !== user.cohort_id) mismatchFields.push("Khóa học (cohort_id)");
-        if (facultyId !== user.faculty_id) mismatchFields.push("Khoa (faculty_id)");
-        if (majorId !== user.major_id) mismatchFields.push("Ngành (major_id)");
-
-        if (mismatchFields.length > 0) {
-            await cleanupFile(file.path);
-            return {
-                statusCode: 403,
-                message: `Bạn chỉ được upload tài liệu vào đúng ${mismatchFields.join(", ")} của mình.`,
-                data: null,
-                errors: ["Upload Guard Violation — Student academic context mismatch"],
-            };
-        }
-    }
-
-    // Bước 4: Kiểm tra subject_id tồn tại trong DB (kèm relations majors để kiểm tra quyền STUDENT)
-    const subjectRepo = AppDataSource.getRepository("Subject");
-    const subject = await subjectRepo.findOne({
-        where: { id: parseInt(body.subject_id) },
-        relations: { majors: true },
-    });
-    if (!subject) {
-        await cleanupFile(file.path);
-        return {
-            statusCode: 400,
-            message: `Môn học với ID '${body.subject_id}' không tồn tại trong hệ thống.`,
-            data: null,
-            errors: ["Subject Not Found"],
-        };
-    }
-
-    // Sửa Lỗi 2.2: Kiểm tra môn học có thuộc chương trình đào tạo chuyên ngành của sinh viên không
-    if (user.role === "STUDENT") {
-        const isSubjectInMajor = subject.majors && subject.majors.some((m) => m.id === user.major_id);
-        if (!isSubjectInMajor) {
-            await cleanupFile(file.path);
-            return {
-                statusCode: 403,
-                message: "Môn học này không thuộc chương trình đào tạo của chuyên ngành bạn đang theo học.",
-                data: null,
-                errors: ["Upload Guard Violation — Subject does not belong to student major"],
-            };
-        }
+    // Bước 3 & 4: UPLOAD GUARD — Kiểm tra quyền nghiệp vụ cho STUDENT và xác minh môn học
+    const guardResult = await validateStudentUploadContext(user, body, file.path);
+    if (!guardResult.isValid) {
+        return guardResult.error;
     }
 
     // Bước 5: Chuẩn bị dữ liệu tài liệu và lưu vào DB
@@ -191,7 +131,7 @@ export const uploadDocument = async (user, file, body) => {
  * @returns {Promise<{ statusCode: number, message: string, data: Object|null, errors: string[]|null }>}
  */
 export const getDocumentDetail = async (documentId, user) => {
-    const document = await findDocumentById(documentId);
+    const document = await findDocumentById(documentId, true);
     if (!document) {
         return {
             statusCode: 404,
@@ -199,6 +139,19 @@ export const getDocumentDetail = async (documentId, user) => {
             data: null,
             errors: ["Document Not Found"],
         };
+    }
+
+    // Nếu tài liệu đã xóa mềm: chỉ riêng Chủ sở hữu (owner) mới được xem chi tiết.
+    // Nếu không phải owner (kể cả Admin hay user khác), lập tức trả về 404 để ẩn sự tồn tại.
+    if (document.is_deleted) {
+        if (!user || user.id !== document.owner?.id) {
+            return {
+                statusCode: 404,
+                message: "Tài liệu không tồn tại hoặc đã bị xóa.",
+                data: null,
+                errors: ["Document Not Found"],
+            };
+        }
     }
 
     // === Bảo vệ quyền riêng tư theo Visibility (Security Guard) ===
@@ -209,8 +162,11 @@ export const getDocumentDetail = async (documentId, user) => {
     if (user && user.id) {
         try {
             await recordView(user.id, documentId);
-            // Đồng bộ số lượt xem mới nhất cho response DTO
-            document.view_count = (Number(document.view_count) || 0) + 1;
+            // Re-fetch để đồng bộ số lượt xem mới nhất từ DB
+            const updatedDoc = await findDocumentById(documentId, document.is_deleted);
+            if (updatedDoc) {
+                document.view_count = updatedDoc.view_count;
+            }
         } catch (viewError) {
             // Lỗi ghi view không được phép ảnh hưởng đến việc trả về tài liệu
             console.warn(`⚠️ Không thể ghi nhận lượt xem cho document ${documentId}:`, viewError.message);
@@ -517,7 +473,8 @@ export const toggleLikeDocument = async (documentId, user) => {
     if (existingLike) {
         await removeLike(user.id, documentId);
         await AppDataSource.getRepository("Document").decrement({ id: documentId }, "like_count", 1);
-        const newCount = Math.max(0, (Number(document.like_count) || 0) - 1);
+        const updatedDoc = await findDocumentById(documentId);
+        const newCount = updatedDoc ? updatedDoc.like_count : 0;
         return {
             statusCode: 200,
             message: "Bỏ thích tài liệu thành công.",
@@ -527,7 +484,8 @@ export const toggleLikeDocument = async (documentId, user) => {
     } else {
         await addLike(user.id, documentId);
         await AppDataSource.getRepository("Document").increment({ id: documentId }, "like_count", 1);
-        const newCount = (Number(document.like_count) || 0) + 1;
+        const updatedDoc = await findDocumentById(documentId);
+        const newCount = updatedDoc ? updatedDoc.like_count : 1;
         return {
             statusCode: 200,
             message: "Thích tài liệu thành công.",
@@ -577,21 +535,4 @@ export const toggleBookmarkDocument = async (documentId, user) => {
     }
 };
 
-// ==========================================
-// HÀM TIỆN ÍCH NỘI BỘ
-// ==========================================
 
-/**
- * Xóa file vật lý khỏi ổ cứng (dùng cho rollback khi lỗi DB hoặc validation).
- * @param {string} filePath - Đường dẫn tuyệt đối tới file cần xóa
- */
-const cleanupFile = async (filePath) => {
-    if (!filePath) return;
-    try {
-        await fs.promises.unlink(filePath);
-    } catch (err) {
-        if (err.code !== "ENOENT") {
-            console.warn(`⚠️ [Cleanup Warning] Không thể dọn dẹp file rác: ${filePath}`, err.message);
-        }
-    }
-};

@@ -203,7 +203,11 @@ export const findTrashDocumentsRepo = async (queryParams, user) => {
     if (user.role !== "ADMIN") {
         query.andWhere("owner.id = :currentUserId", { currentUserId: user.id });
     } else if (queryParams.uploader) {
-        query.andWhere("owner.id = :uploaderId", { uploaderId: parseInt(queryParams.uploader) });
+        // Thống nhất logic lọc uploader với searchDocumentsRepo: tìm theo tên hoặc username
+        query.andWhere(
+            "(unaccent(owner.full_name) ILIKE unaccent(:uploader) OR owner.username ILIKE :uploader)",
+            { uploader: `%${queryParams.uploader}%` }
+        );
     }
 
     if (queryParams.q) {

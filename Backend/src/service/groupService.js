@@ -4,8 +4,8 @@
  * ============================================
  */
 
-import fs from "fs";
 import path from "path";
+import { cleanupFile, validateStudentUploadContext } from "#utils/uploadGuard.js";
 import { AppDataSource } from "#config/db.js";
 import {
     saveGroup,
@@ -20,7 +20,7 @@ import {
     removeDocumentFromGroupRepo,
     findGroupDocumentsRepo,
 } from "#repository/groupRepository.js";
-import { findDocumentById, saveDocument, updateDocumentById } from "#repository/documentRepository.js";
+import { findDocumentById, saveDocument } from "#repository/documentRepository.js";
 import { toGroupResponse, toGroupListResponse } from "#models/dto/response/GroupResponseDTO.js";
 import { toDocumentResponse, toDocumentListResponse } from "#models/dto/response/DocumentResponseDTO.js";
 import {
@@ -241,17 +241,15 @@ export const disbandGroupService = async (groupId, user) => {
 
     // Nghiệp vụ dọn dẹp: Khi giải tán nhóm, toàn bộ tài liệu nội bộ trong group đó (visibility = 'GROUP') bị xóa mềm
     // Trừ tài liệu PUBLIC/PRIVATE được chia sẻ từ bên ngoài vào thì giữ nguyên
-    const groupDocs = await findGroupDocumentsRepo(groupId, { limit: 1000 });
-    if (groupDocs?.documents && Array.isArray(groupDocs.documents)) {
-        for (const doc of groupDocs.documents) {
-            if (doc.visibility === "GROUP") {
-                await updateDocumentById(doc.id, {
-                    is_deleted: true,
-                    deleted_at: new Date(),
-                });
-            }
-        }
-    }
+    // Tối ưu: Batch UPDATE thay vì lặp N+1 query
+    await AppDataSource.getRepository("Document")
+        .createQueryBuilder()
+        .update()
+        .set({ is_deleted: true, deleted_at: new Date(), updated_at: new Date() })
+        .where("id IN (SELECT gd.document_id FROM group_documents gd WHERE gd.group_id = :groupId)", { groupId })
+        .andWhere("visibility = :vis", { vis: "GROUP" })
+        .andWhere("is_deleted = :isDeleted", { isDeleted: false })
+        .execute();
 
     await deleteGroupById(groupId);
 
@@ -462,59 +460,10 @@ export const uploadGroupDocumentService = async (groupId, user, file, body) => {
         };
     }
 
-    // UPLOAD GUARD cho STUDENT
-    if (user.role === "STUDENT") {
-        const cohortId = parseInt(body.cohort_id);
-        const facultyId = parseInt(body.faculty_id);
-        const majorId = parseInt(body.major_id);
-
-        if (!cohortId || !facultyId || !majorId) {
-            await cleanupFile(file.path);
-            return {
-                statusCode: 400,
-                message: "Sinh viên phải cung cấp đầy đủ Khóa (cohort_id), Khoa (faculty_id) và Ngành (major_id) khi upload tài liệu.",
-                data: null,
-                errors: ["Missing Academic Context for Student Upload"],
-            };
-        }
-
-        if (cohortId !== user.cohort_id || facultyId !== user.faculty_id || majorId !== user.major_id) {
-            await cleanupFile(file.path);
-            return {
-                statusCode: 403,
-                message: "Bạn chỉ được upload tài liệu vào đúng Khóa/Khoa/Ngành của mình.",
-                data: null,
-                errors: ["Upload Guard Violation — Student academic context mismatch"],
-            };
-        }
-    }
-
-    const subjectRepo = AppDataSource.getRepository("Subject");
-    const subject = await subjectRepo.findOne({
-        where: { id: parseInt(body.subject_id) },
-        relations: { majors: true },
-    });
-    if (!subject) {
-        await cleanupFile(file.path);
-        return {
-            statusCode: 400,
-            message: `Môn học với ID '${body.subject_id}' không tồn tại.`,
-            data: null,
-            errors: ["Subject Not Found"],
-        };
-    }
-
-    if (user.role === "STUDENT") {
-        const isSubjectInMajor = subject.majors && subject.majors.some((m) => m.id === user.major_id);
-        if (!isSubjectInMajor) {
-            await cleanupFile(file.path);
-            return {
-                statusCode: 403,
-                message: "Môn học này không thuộc chương trình đào tạo chuyên ngành của bạn.",
-                data: null,
-                errors: ["Upload Guard Violation — Subject not in student major"],
-            };
-        }
+    // UPLOAD GUARD & Kiểm tra Môn học cho STUDENT
+    const guardResult = await validateStudentUploadContext(user, body, file.path);
+    if (!guardResult.isValid) {
+        return guardResult.error;
     }
 
     let savedDocument;
@@ -552,16 +501,4 @@ export const uploadGroupDocumentService = async (groupId, user, file, body) => {
     };
 };
 
-/**
- * Xóa file vật lý khỏi ổ cứng khi có lỗi upload.
- */
-const cleanupFile = async (filePath) => {
-    if (!filePath) return;
-    try {
-        await fs.promises.unlink(filePath);
-    } catch (err) {
-        if (err.code !== "ENOENT") {
-            console.warn(`⚠️ [Cleanup Warning] Không thể xóa file tạm: ${filePath}`, err.message);
-        }
-    }
-};
+

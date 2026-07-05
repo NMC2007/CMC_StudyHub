@@ -324,7 +324,7 @@ export const refreshAccessToken = async (token) => {
         };
     }
 
-    // Bước 6: Tạo Access Token mới với thông tin user hiện tại
+    // Bước 6: Tạo Access Token mới và Refresh Token mới (Token Rotation)
     const accessTokenPayload = {
         id: user.id,
         role: user.role,
@@ -337,10 +337,20 @@ export const refreshAccessToken = async (token) => {
     };
     const newAccessToken = generateAccessToken(accessTokenPayload);
 
+    // Thu hồi Refresh Token cũ và cấp mới Refresh Token vào DB
+    await deleteRefreshToken(token);
+    const refreshTokenPayload = { id: user.id };
+    const newRefreshToken = generateRefresh(refreshTokenPayload);
+    const expiresAt = getExpirationDate(7); // 7 ngày
+    await saveRefreshToken(user.id, newRefreshToken, expiresAt);
+
     return {
         statusCode: 200,
         message: "Làm mới Access Token thành công!",
-        data: { accessToken: newAccessToken },
+        data: {
+            accessToken: newAccessToken,
+            refreshToken: newRefreshToken,
+        },
         errors: null,
     };
 };

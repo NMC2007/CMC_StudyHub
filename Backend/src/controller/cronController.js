@@ -2,6 +2,7 @@
  * ============================================
  * CRON CONTROLLER - Tầng điều khiển API Trigger tác vụ ngầm cho Admin
  * ============================================
+ * Lưu ý: Kiểm tra quyền ADMIN đã được xử lý ở tầng Router (rbac middleware).
  */
 
 import { toAPIResponse } from "#models/dto/response/APIResponse.js";
@@ -13,12 +14,6 @@ import { runTrashCleanupTask, runTokenCleanupTask } from "#jobs/cronJobs.js";
  */
 export const triggerTrashCleanup = async (req, res, next) => {
     try {
-        if (!req.user || req.user.role !== "ADMIN") {
-            return res
-                .status(403)
-                .json(toAPIResponse(403, "Từ chối truy cập.", null, ["Chỉ Quản trị viên (ADMIN) mới có quyền chạy tác vụ dọn rác."]));
-        }
-
         const days = req.body?.days !== undefined ? Number(req.body.days) : 15;
         const result = await runTrashCleanupTask(days);
 
@@ -36,12 +31,6 @@ export const triggerTrashCleanup = async (req, res, next) => {
  */
 export const triggerTokenCleanup = async (req, res, next) => {
     try {
-        if (!req.user || req.user.role !== "ADMIN") {
-            return res
-                .status(403)
-                .json(toAPIResponse(403, "Từ chối truy cập.", null, ["Chỉ Quản trị viên (ADMIN) mới có quyền chạy tác vụ dọn dẹp token."]));
-        }
-
         const result = await runTokenCleanupTask();
 
         return res
