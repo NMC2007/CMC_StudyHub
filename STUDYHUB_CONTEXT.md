@@ -16,11 +16,12 @@ StudyHub tạo ra một thư viện tri thức số tập trung, kết nối Sin
 ## 2. Công nghệ sử dụng (Tech Stack)
 
 ### Frontend (FE)
-- **Core Library:** ReactJS (v18+)
-- **Routing:** React Router DOM
-- **Styling:** TailwindCSS
-- **Data Fetching & State:** TanStack Query (React Query) kết hợp Zustand.
-- **HTTP Client:** Axios (cấu hình Interceptors xử lý tự động Access/Refresh Token).
+- **Core Library:** ReactJS (v18 / v19)
+- **Routing:** React Router DOM v8
+- **Styling:** TailwindCSS v4 (CSS-first configuration với `@theme`)
+- **Data Fetching & State:** TanStack Query (React Query v5) kết hợp Zustand.
+- **HTTP Client:** Axios (cấu hình Interceptors xử lý tự động Access/Refresh Token tại `src/api/axiosInstance.js`).
+- **Notifications:** Sonner (Toast hiện đại, tối ưu hiệu năng).
 
 ### Backend (BE)
 - **Runtime & Framework:** Node.js, ExpressJS

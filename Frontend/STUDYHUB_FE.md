@@ -8,17 +8,17 @@
 
 | Vai trò           | Thư viện / Công cụ              | Ghi chú                                |
 | ----------------- | ------------------------------- | -------------------------------------- |
-| Core              | ReactJS 18+                     | Functional Components + Hooks          |
+| Core              | ReactJS 18+ / 19                | Functional Components + Hooks          |
 | Build tool        | Vite                            | Nhanh hơn CRA                          |
-| Routing           | React Router DOM v6             | `createBrowserRouter`, Lazy loading    |
-| Styling           | TailwindCSS v3                  | Utility-first, custom theme            |
+| Routing           | React Router DOM v8             | `createBrowserRouter`, Lazy loading    |
+| Styling           | TailwindCSS v4                  | Utility-first, CSS-first `@theme`      |
 | State Global      | Zustand                         | Auth session, user info                |
 | Server State      | TanStack Query (React Query v5) | Cache, invalidate, optimistic update   |
-| HTTP Client       | Axios                           | 1 instance duy nhất + interceptors     |
+| HTTP Client       | Axios                           | 1 instance duy nhất tại `src/api/`     |
 | Form & Validation | React Hook Form + Zod           | Schema validation phía client          |
 | Icons             | Lucide React                    | Nhất quán toàn dự án                   |
-| Notifications     | react-hot-toast                 | Toast nhẹ, không cần provider phức tạp |
-| PDF Viewer        | @react-pdf-viewer/core          | Xem PDF trực tiếp trong trình duyệt    |
+| Notifications     | Sonner                          | Toast hiện đại, nhẹ, ít boilerplate    |
+| PDF Viewer        | `window.open` / Defer           | Mở tab mới xem/tải PDF (tối ưu bundle) |
 
 ---
 
@@ -80,35 +80,45 @@ src/
 
 ---
 
-## 3. Design System & Tailwind Theme
+## 3. Design System & Tailwind Theme (TailwindCSS v4)
 
-### 3.1. Màu sắc theo Role
+### 3.1. Cấu hình Màu sắc & Typography (`src/index.css`)
 
-```js
-// tailwind.config.js — extend colors
-colors: {
-  brand: {
-    // STUDENT — Xanh biển
-    student: { DEFAULT: '#2563EB', light: '#DBEAFE', dark: '#1E40AF' },
-    // LECTURER — Xanh lá
-    lecturer: { DEFAULT: '#16A34A', light: '#DCFCE7', dark: '#15803D' },
-    // ADMIN — Đỏ
-    admin: { DEFAULT: '#DC2626', light: '#FEE2E2', dark: '#B91C1C' },
-    // Neutral — Trắng xanh nhẹ (nền tổng thể)
-    surface: '#F0F7FF',
-    card: '#FFFFFF',
-  }
+TailwindCSS v4 sử dụng CSS-first configuration qua chỉ thị `@theme`, không cần file `tailwind.config.js`:
+
+```css
+@import "tailwindcss";
+
+@theme {
+  /* Font family */
+  --font-sans: "Inter", sans-serif;
+
+  /* Màu sắc theo Role */
+  /* STUDENT — Xanh biển */
+  --color-brand-student: #306bec;
+  --color-brand-student-light: #dbeafe;
+  --color-brand-student-dark: #1e40af;
+
+  /* LECTURER — Xanh lá */
+  --color-brand-lecturer: #22a853;
+  --color-brand-lecturer-light: #dcfce7;
+  --color-brand-lecturer-dark: #15803d;
+
+  /* ADMIN — Đỏ */
+  --color-brand-admin: #e03c3c;
+  --color-brand-admin-light: #fee2e2;
+  --color-brand-admin-dark: #b91c1c;
+
+  /* Neutral — Trắng xanh nhẹ (nền tổng thể) */
+  --color-surface: #f0f7ff;
+  --color-card: #ffffff;
 }
 ```
 
-### 3.2. Typography
+### 3.2. Cơ chế Dynamic Theme theo Role
 
-```js
-// Google Fonts: Inter
-fontFamily: {
-  sans: ["Inter", "sans-serif"];
-}
-```
+- Giao diện Student và Lecturer dùng chung logic và component (như `DocumentsPage`, `SearchPage`, `FavoritesPage`, `GroupsPage`, `ProfilePage`).
+- Màu sắc chủ đạo (sidebar, nút bấm active, badge, highlight) sẽ được đổi động (Student màu xanh biển `#2563EB`, Lecturer màu xanh lá `#16A34A`) dựa theo `role` lấy từ Zustand Store (`useAuthStore`).
 
 ### 3.3. Breakpoints chuẩn Tailwind
 
@@ -583,8 +593,8 @@ FE luôn truy cập `response.data.data` để lấy dữ liệu thực tế.
 | Loading             | Skeleton hoặc Spinner                           |
 | Empty               | Illustration + message + CTA                    |
 | Error               | Alert đỏ + nút Thử lại                          |
-| Success mutation    | Toast green (react-hot-toast)                   |
-| Error mutation      | Toast red với message từ backend                |
+| Success mutation    | Toast green (`sonner` toast.success)            |
+| Error mutation      | Toast red (`sonner` toast.error) với message    |
 | 403 Forbidden       | Redirect về `/` + toast cảnh báo                |
 | 401 Unauthenticated | Auto-refresh → nếu thất bại → redirect `/login` |
 | 404 Not Found       | Trang 404 có link quay lại                      |
