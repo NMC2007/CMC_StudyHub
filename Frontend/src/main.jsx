@@ -1,9 +1,9 @@
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from 'sonner';
-import './index.css';
-import App from './App.jsx';
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "sonner";
+import "./index.css";
+import App from "./App.jsx";
 
 /**
  * QueryClient Configuration
@@ -36,7 +36,7 @@ const queryClient = new QueryClient({
   },
 });
 
-createRoot(document.getElementById('root')).render(
+createRoot(document.getElementById("root")).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <App />
@@ -53,8 +53,8 @@ createRoot(document.getElementById('root')).render(
         duration={4000}
         toastOptions={{
           style: {
-            fontFamily: 'Inter, sans-serif',
-            fontSize: '14px',
+            fontFamily: "Inter, sans-serif",
+            fontSize: "14px",
           },
         }}
       />
