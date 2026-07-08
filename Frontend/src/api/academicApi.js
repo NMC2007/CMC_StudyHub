@@ -21,28 +21,32 @@ export const getCohorts = () =>
   api.get('/academic/cohorts');
 
 /**
- * Lấy Khoa theo Khóa học.
- * @param {number} cohortId
+ * Lấy danh sách Khoa (áp dụng chung toàn trường, không phụ thuộc Khóa).
+ * Tham số cohortCode chỉ là placeholder, không ảnh hưởng kết quả.
  * @returns Promise — data.data: { faculties: [] }
  */
-export const getFacultiesByCohort = (cohortId) =>
-  api.get(`/academic/cohorts/${cohortId}/faculties`);
+export const getFacultiesByCohort = (_cohortCode) =>
+  api.get('/academic/faculties');
 
 /**
- * Lấy Ngành theo Khoa.
- * @param {number} facultyId
+ * Lấy Ngành theo mã Khoa (faculty_code).
+ * @param {string} facultyCode - Mã khoa (VD: 'CNTT')
  * @returns Promise — data.data: { majors: [] }
  */
-export const getMajorsByFaculty = (facultyId) =>
-  api.get(`/academic/faculties/${facultyId}/majors`);
+export const getMajorsByFaculty = (facultyCode) =>
+  api.get('/academic/majors', {
+    params: facultyCode ? { faculty_code: facultyCode } : {},
+  });
 
 /**
- * Lấy Môn học theo Ngành.
- * @param {number} majorId
+ * Lấy Môn học theo mã Ngành (major_code).
+ * @param {string} majorCode - Mã ngành (VD: 'BIT')
  * @returns Promise — data.data: { subjects: [] }
  */
-export const getSubjectsByMajor = (majorId) =>
-  api.get(`/academic/majors/${majorId}/subjects`);
+export const getSubjectsByMajor = (majorCode) =>
+  api.get('/academic/subjects', {
+    params: majorCode ? { major_code: majorCode } : {},
+  });
 
 // ─── ADMIN — COHORTS ──────────────────────────────────────────────────────────
 

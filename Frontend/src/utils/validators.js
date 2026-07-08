@@ -62,20 +62,21 @@ export const registerStep1Schema = z.object({
 
 /**
  * Schema cho Step 2 khi role = STUDENT.
+ * Dùng mã code (string) theo đặc tả API Backend (api_testing_guide.md Mục 1.1).
  * Bắt buộc chọn đủ cả 3 tầng: Khóa, Khoa, Ngành.
  */
 export const registerStep2StudentSchema = z.object({
-  cohort_id: z.number({ required_error: 'Vui lòng chọn Khóa học' }).min(1, 'Vui lòng chọn Khóa học'),
-  faculty_id: z.number({ required_error: 'Vui lòng chọn Khoa' }).min(1, 'Vui lòng chọn Khoa'),
-  major_id: z.number({ required_error: 'Vui lòng chọn Ngành' }).min(1, 'Vui lòng chọn Ngành'),
+  cohort_code: z.string({ required_error: 'Vui lòng chọn Khóa học' }).min(1, 'Vui lòng chọn Khóa học'),
+  faculty_code: z.string({ required_error: 'Vui lòng chọn Khoa' }).min(1, 'Vui lòng chọn Khoa'),
+  major_code: z.string({ required_error: 'Vui lòng chọn Ngành' }).min(1, 'Vui lòng chọn Ngành'),
 });
 
 /**
  * Schema cho Step 2 khi role = LECTURER.
- * Chỉ cần chọn Khoa.
+ * Chỉ cần chọn Khoa (mã code).
  */
 export const registerStep2LecturerSchema = z.object({
-  faculty_id: z.number({ required_error: 'Vui lòng chọn Khoa' }).min(1, 'Vui lòng chọn Khoa'),
+  faculty_code: z.string({ required_error: 'Vui lòng chọn Khoa' }).min(1, 'Vui lòng chọn Khoa'),
 });
 
 // ─── DOCUMENT ─────────────────────────────────────────────────────────────────

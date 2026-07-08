@@ -34,7 +34,8 @@ export const refreshToken = (body) =>
 
 /**
  * Đăng xuất — Xóa refreshToken trên server.
+ * @param {{ refreshToken: string }} body
  * @returns Promise
  */
-export const logout = () =>
-  api.post('/auth/logout');
+export const logout = (body) =>
+  api.post('/auth/logout', body);

@@ -20,6 +20,12 @@
    - Dùng chung logic, custom hooks, và các trang giao diện (như `/documents`, `/search`, `/favorites`, `/groups`, `/profile`).
    - Phân biệt bằng **màu sắc động (Dynamic Color Theming)**: Giao diện Sinh viên sử dụng tone màu **Xanh biển (`#2563EB`)**, Giao diện Giảng viên sử dụng tone màu **Xanh lá (`#16A34A`)** dựa theo `role` trong Zustand Store.
    - Các logic đặc thù (ví dụ: Giảng viên upload không bị giới hạn Khóa/Khoa/Ngành) được xử lý conditionally theo `role`.
+6. **Triển khai sớm 4 Atomic UI Components (`Button`, `Input`, `Select`, `Badge`) ở Phase 2/3:**
+   - _Lý do:_ Theo lộ trình gốc, Phase 4 mới xây dựng "Shared Component Library". Tuy nhiên, việc đẩy sớm 4 component này lên trước khi làm Phase 2 & 3 giúp các trang Authentication (Login, Register) và Layout (AppLayout, Sidebar) được xây dựng chuẩn Atomic Design ngay từ đầu. Tránh việc hardcode lặp lại Tailwind classes, dễ dàng tích hợp React Hook Form + Zod validation, đảm bảo tính nhất quán cao cho toàn bộ UI.
+7. **Tự động điền sẵn (Pre-fill) thông tin đăng nhập sau khi Đăng ký thành công:**
+   - _Lý do:_ Tối ưu hóa trải nghiệm người dùng (UX) và giảm thao tác thừa. Khi sinh viên/giảng viên đăng ký tài khoản thành công (`POST /auth/register`), hệ thống tự động chuyển hướng về trang `/login` kèm theo state mang theo `username` hoặc `email` vừa đăng ký, điền sẵn vào ô input để người dùng chỉ cần nhập mật khẩu là có thể đăng nhập ngay.
+8. **Xây dựng Trang Dashboard khung (Placeholder Dashboards) trong Phase 3:**
+   - _Lý do:_ Để kiểm thử triệt để luồng phân quyền Router Guard (`ProtectedRoute`, `RbacRoute`, `RoleBasedDashboard`) và cơ chế đổi màu chủ đạo (Dynamic Color Theming: Xanh biển cho Student, Xanh lá cho Lecturer, Đỏ cho Admin) ngay sau khi hoàn thành Phase 3 mà không cần chờ đến Phase 5 & 6.
 
 ---
 

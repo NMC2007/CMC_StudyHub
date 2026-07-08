@@ -21,13 +21,18 @@ export const useLogin = () => {
     mutationFn: login,
     onSuccess: (response) => {
       const { user, accessToken, refreshToken } = response.data.data;
+
       setCredentials(user, accessToken);
       localStorage.setItem('refreshToken', refreshToken);
       toast.success(`Chào mừng trở lại, ${user.full_name}!`);
       navigate('/');
     },
     onError: (error) => {
-      const message = error.response?.data?.message || 'Đăng nhập thất bại. Vui lòng thử lại.';
+      const status = error.response?.status;
+      // Luôn hiển thị lỗi chung chung cho các mã lỗi xác thực để bảo mật (tránh hacker dò tài khoản)
+      const message = [400, 401, 404].includes(status)
+        ? 'Tài khoản hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại.'
+        : error.response?.data?.message || 'Đăng nhập thất bại. Vui lòng thử lại sau.';
       toast.error(message);
     },
   });
@@ -36,15 +41,20 @@ export const useLogin = () => {
 /**
  * Hook đăng ký.
  * Sau khi thành công: redirect về Login + toast hướng dẫn đăng nhập.
+ * Hỗ trợ truyền identifier (username/email) sang LoginPage qua navigate state
+ * để tự động điền sẵn (pre-fill) ô đăng nhập — giảm thao tác cho người dùng.
  */
 export const useRegister = () => {
   const navigate = useNavigate();
 
   return useMutation({
     mutationFn: register,
-    onSuccess: () => {
+    onSuccess: (_response, variables) => {
       toast.success('Tạo tài khoản thành công! Vui lòng đăng nhập.');
-      navigate('/login');
+      // Truyền username hoặc email vừa đăng ký sang LoginPage để pre-fill
+      navigate('/login', {
+        state: { prefillIdentifier: variables.username || variables.email },
+      });
     },
     onError: (error) => {
       const message = error.response?.data?.message || 'Đăng ký thất bại. Vui lòng thử lại.';
@@ -55,16 +65,16 @@ export const useRegister = () => {
 
 /**
  * Hook đăng xuất.
- * Gọi API logout (xóa refreshToken trên server) → clear store → clear localStorage → navigate login.
+ * Gọi API logout (gửi kèm refreshToken trong body để xóa trên server) → clear store → clear localStorage → navigate login.
  */
 export const useLogout = () => {
   const navigate = useNavigate();
   const clearCredentials = useAuthStore((s) => s.clearCredentials);
 
   return useMutation({
-    mutationFn: logout,
+    mutationFn: () => logout({ refreshToken: localStorage.getItem('refreshToken') }),
     onSettled: () => {
-      // onSettled (chạy cả khi success lẫn error) đảm bảo user luôn bị logout
+      // onSettled (chạy cả khi success lẫn error) đảm bảo user luôn bị logout ở FE
       // kể cả khi API gọi thất bại (ví dụ: mất mạng)
       clearCredentials();
       localStorage.removeItem('refreshToken');

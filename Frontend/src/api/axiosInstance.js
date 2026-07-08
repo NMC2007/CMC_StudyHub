@@ -37,61 +37,72 @@ api.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
+// Singleton promise để chống gọi trùng API refresh khi có nhiều request cùng lỗi 401
+let refreshTokenPromise = null;
+
 // ─── RESPONSE INTERCEPTOR ───────────────────────────────────────────────────
-// Logic Token Rotation:
+// Logic Token Rotation với Promise Deduplication:
 // 1. Nếu nhận 401 và chưa retry (_retry chưa được set):
 //    a. Đánh dấu _retry = true để tránh retry lần 2.
 //    b. Lấy refreshToken từ localStorage.
-//    c. Gọi /auth/refresh bằng axios GỐC (không qua api instance).
-//    d. Lưu accessToken mới vào Zustand, refreshToken mới vào localStorage.
+//    c. Nếu chưa có request refresh nào đang chạy -> Khởi tạo refreshTokenPromise.
+//    d. Chờ promise hoàn thành để lấy accessToken mới.
 //    e. Gắn Authorization mới và retry request gốc.
-// 2. Nếu refresh thất bại (refreshToken hết hạn/bị thu hồi):
-//    a. clearCredentials() → xóa Zustand state.
-//    b. Xóa refreshToken khỏi localStorage.
-//    c. Redirect về /login.
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    // Điều kiện retry: lỗi 401, chưa retry lần nào, và không phải request refresh token tự nó
+    // Điều kiện retry: lỗi 401, chưa retry lần nào, và KHÔNG PHẢI các API xác thực (login, register, refresh)
     const is401 = error.response?.status === 401;
     const notRetried = !originalRequest._retry;
-    const notRefreshRequest = !originalRequest.url?.includes('/auth/refresh');
+    const isAuthEndpoint =
+      originalRequest.url?.includes('/auth/login') ||
+      originalRequest.url?.includes('/auth/register') ||
+      originalRequest.url?.includes('/auth/refresh');
 
-    if (is401 && notRetried && notRefreshRequest) {
+    if (is401 && notRetried && !isAuthEndpoint) {
       originalRequest._retry = true;
 
       const refreshToken = localStorage.getItem('refreshToken');
 
-      // Không có refreshToken → logout ngay, không cần gọi API
+      // Không có refreshToken → Có 2 trường hợp:
+      // 1. Guest chưa đăng nhập (đang ở trang /register, /login, v.v.) → KHÔNG redirect, trả lỗi về component
+      // 2. User bị mất token bất thường → cũng không redirect vì không có gì để clear
+      // Quyết định: Không phân biệt 2 case, chỉ reject. React Router Guard sẽ handle redirect nếu cần.
       if (!refreshToken) {
-        useAuthStore.getState().clearCredentials();
-        localStorage.removeItem('refreshToken');
-        window.location.href = '/login';
         return Promise.reject(error);
       }
 
+      // Nếu chưa có request refresh nào đang chạy, tạo mới promise
+      if (!refreshTokenPromise) {
+        refreshTokenPromise = (async () => {
+          try {
+            const { data } = await axios.post(`${BASE_URL}/auth/refresh`, {
+              refreshToken,
+            });
+            const { accessToken: newAccessToken, refreshToken: newRefreshToken } = data.data;
+
+            useAuthStore.getState().setCredentials(null, newAccessToken);
+            localStorage.setItem('refreshToken', newRefreshToken);
+            return newAccessToken;
+          } catch (refreshError) {
+            useAuthStore.getState().clearCredentials();
+            localStorage.removeItem('refreshToken');
+            window.location.href = '/login';
+            throw refreshError;
+          } finally {
+            refreshTokenPromise = null;
+          }
+        })();
+      }
+
       try {
-        // Gọi bằng axios GỐC để tránh interceptor recursive
-        const { data } = await axios.post(`${BASE_URL}/auth/refresh`, {
-          refreshToken,
-        });
-
-        const { accessToken: newAccessToken, refreshToken: newRefreshToken } = data.data;
-
-        // Lưu token mới (Token Rotation — luôn phải lưu cả 2 token mới)
-        useAuthStore.getState().setCredentials(null, newAccessToken);
-        localStorage.setItem('refreshToken', newRefreshToken);
-
-        // Gắn token mới vào request gốc và retry
+        // Chờ request refresh hoàn thành và lấy token mới
+        const newAccessToken = await refreshTokenPromise;
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         return api(originalRequest);
       } catch (refreshError) {
-        // Refresh thất bại → buộc logout
-        useAuthStore.getState().clearCredentials();
-        localStorage.removeItem('refreshToken');
-        window.location.href = '/login';
         return Promise.reject(refreshError);
       }
     }

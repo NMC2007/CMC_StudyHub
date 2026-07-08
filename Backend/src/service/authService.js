@@ -69,7 +69,7 @@ export const register = async (body) => {
             statusCode: 409,
             message: "Email này đã được sử dụng.",
             data: null,
-            errors: ["Email đã tồn tại trong hệ thống."],
+            errors: ["Email đã tồn tại."],
         };
     }
 
@@ -80,7 +80,7 @@ export const register = async (body) => {
             statusCode: 409,
             message: "Username này đã được sử dụng.",
             data: null,
-            errors: ["Username đã tồn tại trong hệ thống."],
+            errors: ["Username đã tồn tại."],
         };
     }
 
@@ -92,7 +92,7 @@ export const register = async (body) => {
                 statusCode: 409,
                 message: "Số điện thoại này đã được sử dụng.",
                 data: null,
-                errors: ["Số điện thoại đã tồn tại trong hệ thống."],
+                errors: ["Số điện thoại đã tồn tại."],
             };
         }
     }
