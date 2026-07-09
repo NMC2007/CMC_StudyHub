@@ -103,13 +103,24 @@ export const removeGroupMemberRepo = async (groupId, userId) => {
  * @returns {Promise<Array>}
  */
 export const findGroupsByUserIdRepo = async (userId) => {
-    return await groupRepo
+    const { entities, raw } = await groupRepo
         .createQueryBuilder("group")
         .leftJoinAndSelect("group.owner", "owner")
         .leftJoin("group.members", "member")
+        .addSelect("(SELECT COUNT(*) FROM group_members gm WHERE gm.group_id = group.id)", "member_count")
         .where("owner.id = :userId OR member.user_id = :userId", { userId })
         .orderBy("group.created_at", "DESC")
-        .getMany();
+        .getRawAndEntities();
+
+    return entities.map((group) => {
+        const rawRow = raw.find((r) => Number(r.group_id ?? r.id) === Number(group.id));
+        const count = rawRow && rawRow.member_count ? Number(rawRow.member_count) : 0;
+        return {
+            ...group,
+            member_count: count,
+            is_member: true,
+        };
+    });
 };
 
 /**

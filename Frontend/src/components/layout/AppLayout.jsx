@@ -16,10 +16,11 @@
  *
  * Tuân thủ: STUDYHUB_FE.md mục 7.6 (AppLayout / PageWrapper).
  */
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { Outlet } from 'react-router';
 import Sidebar from './Sidebar';
 import TopNavbar from './TopNavbar';
+import Skeleton from '#/components/ui/Skeleton';
 
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -39,7 +40,20 @@ export default function AppLayout() {
 
         {/* Scrollable content area */}
         <main className="flex-1 overflow-y-auto">
-          <Outlet />
+          <Suspense
+            fallback={
+              <div className="p-6 md:p-8 flex flex-col gap-4">
+                <Skeleton height="h-28" className="rounded-2xl" />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Skeleton height="h-44" className="rounded-2xl" />
+                  <Skeleton height="h-44" className="rounded-2xl" />
+                  <Skeleton height="h-44" className="rounded-2xl" />
+                </div>
+              </div>
+            }
+          >
+            <Outlet />
+          </Suspense>
         </main>
       </div>
     </div>

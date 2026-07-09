@@ -13,6 +13,7 @@
  *
  * Tuân thủ: STUDYHUB_FE.md mục 6 (Routing & Route Guards).
  */
+import React from 'react';
 import { createBrowserRouter } from 'react-router';
 
 import { useAuthStore } from '#/stores/useAuthStore';
@@ -32,6 +33,14 @@ import NotFoundPage from '#/pages/NotFoundPage';
 
 // ── Dashboard Placeholders ──
 import AdminDashboard from '#/pages/admin/AdminDashboard';
+
+// ── Phase 5 Shared Pages (Lazy Loaded) ──
+const DocumentsPage = React.lazy(() => import('#/pages/shared/DocumentsPage'));
+const SearchPage = React.lazy(() => import('#/pages/shared/SearchPage'));
+const FavoritesPage = React.lazy(() => import('#/pages/shared/FavoritesPage'));
+const GroupsPage = React.lazy(() => import('#/pages/shared/GroupsPage'));
+const GroupDetailPage = React.lazy(() => import('#/pages/shared/GroupDetailPage'));
+const ProfilePage = React.lazy(() => import('#/pages/shared/ProfilePage'));
 
 // ─── Loader: Chặn user đã đăng nhập truy cập Login/Register ──────────────────
 // Nếu đã authenticated → redirect về "/" thay vì hiển thị trang Login/Register.
@@ -75,13 +84,12 @@ const router = createBrowserRouter([
             path: '/',
             element: <RoleBasedDashboard />,
           },
-          // Các route sau sẽ được bổ sung ở Phase 5:
-          // { path: '/documents', element: <DocumentsPage /> },
-          // { path: '/search',    element: <SearchPage /> },
-          // { path: '/favorites', element: <FavoritesPage /> },
-          // { path: '/groups',    element: <GroupsPage /> },
-          // { path: '/groups/:id', element: <GroupDetailPage /> },
-          // { path: '/profile',   element: <ProfilePage /> },
+          { path: '/documents', element: <DocumentsPage /> },
+          { path: '/search', element: <SearchPage /> },
+          { path: '/favorites', element: <FavoritesPage /> },
+          { path: '/groups', element: <GroupsPage /> },
+          { path: '/groups/:id', element: <GroupDetailPage /> },
+          { path: '/profile', element: <ProfilePage /> },
 
           // ── 2b. ADMIN ROUTES — Chỉ dành cho ADMIN ──
           {

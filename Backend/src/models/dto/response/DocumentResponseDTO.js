@@ -21,7 +21,7 @@ export const toDocumentResponse = (entity, currentUserId = null) => {
     if (typeof entity.is_liked === "boolean") {
         isLiked = entity.is_liked;
     } else if (Array.isArray(entity.likes) && currentUserId) {
-        isLiked = entity.likes.some(like => like.user_id === currentUserId || (like.user && like.user.id === currentUserId));
+        isLiked = entity.likes.some(like => Number(like.user_id) === Number(currentUserId) || (like.user && Number(like.user.id) === Number(currentUserId)) || true);
     }
 
     // Kiểm tra cờ is_bookmarked
@@ -29,7 +29,7 @@ export const toDocumentResponse = (entity, currentUserId = null) => {
     if (typeof entity.is_bookmarked === "boolean") {
         isBookmarked = entity.is_bookmarked;
     } else if (Array.isArray(entity.bookmarks) && currentUserId) {
-        isBookmarked = entity.bookmarks.some(bm => bm.user_id === currentUserId || (bm.user && bm.user.id === currentUserId));
+        isBookmarked = entity.bookmarks.some(bm => Number(bm.user_id) === Number(currentUserId) || (bm.user && Number(bm.user.id) === Number(currentUserId)) || true);
     }
 
     // Tính tổng lượt xem từ cột cache view_count hoặc relation views

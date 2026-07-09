@@ -24,8 +24,11 @@ export const toUserResponse = (userEntity) => {
         dob: userEntity.dob || null,
         role: userEntity.role,
         avatar: userEntity.avatar || null,
+        cohort_id: userEntity.cohort?.id || null,
         cohort_code: userEntity.cohort?.code || null,
+        faculty_id: userEntity.faculty?.id || null,
         faculty_code: userEntity.faculty?.code || null,
+        major_id: userEntity.major?.id || null,
         major_code: userEntity.major?.code || null,
         created_at: userEntity.created_at,
     };

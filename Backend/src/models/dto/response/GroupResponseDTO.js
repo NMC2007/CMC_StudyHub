@@ -27,6 +27,17 @@ export const toGroupResponse = (entity, currentUserId = null) => {
         if (currentUserId && !isMember) {
             isMember = entity.members.some((m) => m.user_id === currentUserId || m.user?.id === currentUserId);
         }
+    } else if (typeof entity.is_member === "boolean") {
+        isMember = entity.is_member;
+    }
+
+    let memberCount = 0;
+    if (typeof entity.member_count === "number") {
+        memberCount = entity.member_count;
+    } else if (entity.member_count !== undefined && entity.member_count !== null) {
+        memberCount = Number(entity.member_count);
+    } else if (Array.isArray(entity.members)) {
+        memberCount = entity.members.length;
     }
 
     return {
@@ -38,14 +49,14 @@ export const toGroupResponse = (entity, currentUserId = null) => {
         is_member: isMember,
         owner: entity.owner
             ? {
-                  id: entity.owner.id,
-                  full_name: entity.owner.full_name,
-                  username: entity.owner.username,
-                  avatar: entity.owner.avatar || null,
-                  role: entity.owner.role,
-              }
+                id: entity.owner.id,
+                full_name: entity.owner.full_name,
+                username: entity.owner.username,
+                avatar: entity.owner.avatar || null,
+                role: entity.owner.role,
+            }
             : null,
-        member_count: Array.isArray(entity.members) ? entity.members.length : 0,
+        member_count: memberCount,
         members: members.length > 0 ? members : undefined,
     };
 };

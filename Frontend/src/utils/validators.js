@@ -98,8 +98,8 @@ export const uploadDocumentSchema = z.object({
     ['PUBLIC', 'PRIVATE', 'GROUP'],
     { required_error: 'Vui lòng chọn phạm vi hiển thị' }
   ),
-  subject_id: z
-    .number({ required_error: 'Vui lòng chọn Môn học' })
+  subject_id: z.coerce
+    .number({ required_error: 'Vui lòng chọn Môn học', invalid_type_error: 'Vui lòng chọn Môn học' })
     .min(1, 'Vui lòng chọn Môn học'),
 });
 

@@ -37,16 +37,26 @@ export const saveDocument = async (docData) => {
  * @param {boolean} includeDeleted - Có bao gồm tài liệu đã bị xóa mềm không
  * @returns {Promise<Object|null>}
  */
-export const findDocumentById = async (id, includeDeleted = false) => {
+export const findDocumentById = async (id, includeDeleted = false, user = null) => {
     const whereCondition = { id };
     if (!includeDeleted) {
         whereCondition.is_deleted = false;
     }
 
-    return await documentRepo.findOne({
-        where: whereCondition,
-        relations: defaultRelations,
-    });
+    const query = documentRepo.createQueryBuilder("doc")
+        .leftJoinAndSelect("doc.owner", "owner")
+        .leftJoinAndSelect("doc.subject", "subject")
+        .leftJoinAndSelect("doc.cohort", "cohort")
+        .leftJoinAndSelect("doc.faculty", "faculty")
+        .leftJoinAndSelect("doc.major", "major")
+        .where(whereCondition);
+
+    if (user && user.id) {
+        query.leftJoinAndSelect("doc.likes", "user_likes", "user_likes.user_id = :currUserId", { currUserId: user.id })
+             .leftJoinAndSelect("doc.bookmarks", "user_bookmarks", "user_bookmarks.user_id = :currUserId", { currUserId: user.id });
+    }
+
+    return await query.getOne();
 };
 
 /**
@@ -80,6 +90,12 @@ export const searchDocumentsRepo = async (queryParams, user = null) => {
         .leftJoinAndSelect("doc.faculty", "faculty")
         .leftJoinAndSelect("doc.major", "major")
         .where("doc.is_deleted = :isDeleted", { isDeleted: false });
+
+    // === Lọc và đính kèm cờ tương tác cá nhân (is_liked, is_bookmarked) của user ===
+    if (user && user.id) {
+        query.leftJoinAndSelect("doc.likes", "user_likes", "user_likes.user_id = :currUserId", { currUserId: user.id })
+             .leftJoinAndSelect("doc.bookmarks", "user_bookmarks", "user_bookmarks.user_id = :currUserId", { currUserId: user.id });
+    }
 
     // === Lọc danh sách tài liệu đã đánh dấu (bookmarks) hoặc đã thích (likes) của user ===
     if ((queryParams.is_bookmarked === true || queryParams.is_bookmarked === "true") && user && user.id) {
@@ -143,8 +159,9 @@ export const searchDocumentsRepo = async (queryParams, user = null) => {
     }
 
     // === Lọc theo vai trò người đăng (role: LECTURER hay STUDENT) ===
-    if (queryParams.role) {
-        query.andWhere("owner.role::text = :role", { role: queryParams.role });
+    const filterRole = queryParams.role || queryParams.uploader_role;
+    if (filterRole && filterRole !== "ALL") {
+        query.andWhere("owner.role::text = :role", { role: filterRole });
     }
 
     // === Lọc theo phân cấp học thuật ===
@@ -162,8 +179,9 @@ export const searchDocumentsRepo = async (queryParams, user = null) => {
     }
 
     // === Lọc theo loại tài liệu (doc_type) ===
-    if (queryParams.type) {
-        query.andWhere("doc.document_type = :docType", { docType: queryParams.type });
+    const filterType = queryParams.type || queryParams.document_type;
+    if (filterType && filterType !== "ALL") {
+        query.andWhere("doc.document_type = :docType", { docType: filterType });
     }
 
     // === Sắp xếp mới nhất trước ===
@@ -199,6 +217,11 @@ export const findTrashDocumentsRepo = async (queryParams, user) => {
         .leftJoinAndSelect("doc.faculty", "faculty")
         .leftJoinAndSelect("doc.major", "major")
         .where("doc.is_deleted = :isDeleted", { isDeleted: true });
+
+    if (user && user.id) {
+        query.leftJoinAndSelect("doc.likes", "user_likes", "user_likes.user_id = :currUserId", { currUserId: user.id })
+             .leftJoinAndSelect("doc.bookmarks", "user_bookmarks", "user_bookmarks.user_id = :currUserId", { currUserId: user.id });
+    }
 
     if (user.role !== "ADMIN") {
         query.andWhere("owner.id = :currentUserId", { currentUserId: user.id });

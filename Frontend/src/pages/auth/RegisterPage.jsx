@@ -15,7 +15,7 @@
  */
 import { useState, useEffect, useRef, forwardRef } from "react";
 import React from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "react-router";
 import {
@@ -39,9 +39,8 @@ import {
   registerStep2LecturerSchema,
 } from "#/utils/validators";
 import { useRegister } from "#/hooks/useAuth";
-import { useCohorts, useFaculties, useMajors } from "#/hooks/useAcademic";
+import CascadeSelect from "#/components/academic/CascadeSelect";
 import Input from "#/components/ui/Input";
-import Select from "#/components/ui/Select";
 import Button from "#/components/ui/Button";
 
 export default function RegisterPage() {
@@ -436,7 +435,6 @@ function Step2Form({ role, onBack, onSubmit, isPending }) {
     : registerStep2LecturerSchema;
 
   const {
-    control,
     handleSubmit,
     watch,
     setValue,
@@ -448,65 +446,21 @@ function Step2Form({ role, onBack, onSubmit, isPending }) {
       : { faculty_code: "" },
   });
 
-  // ── Cascade State (dùng mã code, không dùng id) ──
-  const cohortCode = watch("cohort_code");
-  const facultyCode = watch("faculty_code");
+  const values = {
+    cohort_code: watch("cohort_code") || "",
+    faculty_code: watch("faculty_code") || "",
+    major_code: watch("major_code") || "",
+  };
 
-  // ── TanStack Query hooks ──
-  // useCohorts: luôn fetch (không có điều kiện)
-  const { data: cohortsData, isLoading: cohortsLoading } = useCohorts();
-  // useFaculties: luôn fetch ngay khi vào Step 2 (Khoa áp dụng chung toàn trường)
-  const { data: facultiesData, isLoading: facultiesLoading } = useFaculties();
-  // useMajors: chỉ fetch khi Sinh viên đã chọn Khoa (có facultyCode)
-  const { data: majorsData, isLoading: majorsLoading } = useMajors(
-    isStudent ? facultyCode : null,
-    { enabled: isStudent && !!facultyCode },
-  );
-
-  // ── Cascade Reset: Reset tầng dưới khi tầng trên thay đổi ──
-  useEffect(() => {
-    if (isStudent) {
-      setValue("faculty_code", "");
-      setValue("major_code", "");
-    }
-  }, [cohortCode, setValue, isStudent]);
-
-  useEffect(() => {
-    if (isStudent) {
-      setValue("major_code", "");
-    }
-  }, [facultyCode, setValue, isStudent]);
-
-  // ── Helpers: Ánh xạ dữ liệu API → options (value = mã code) ──
-  const cohortsOptions = (cohortsData?.cohorts || cohortsData || []).map(
-    (c) => ({
-      value: c.code,
-      label: c.name || `${c.code} (${c.start_year}–${c.end_year})`,
-    }),
-  );
-
-  const facultiesOptions = (
-    facultiesData?.faculties ||
-    facultiesData ||
-    []
-  ).map((f) => ({
-    value: f.code,
-    label: f.name,
-  }));
-
-  const majorsOptions = (majorsData?.majors || majorsData || []).map((m) => ({
-    value: m.code,
-    label: m.name,
-  }));
-
-  // ── Handler submit step 2: Truyền thẳng mã code (không cần ép Number) ──
-  const handleStep2Submit = (data) => {
-    onSubmit(data);
+  const handleCascadeChange = (newVals) => {
+    setValue("cohort_code", newVals.cohort_code || "", { shouldValidate: true });
+    setValue("faculty_code", newVals.faculty_code || "", { shouldValidate: true });
+    setValue("major_code", newVals.major_code || "", { shouldValidate: true });
   };
 
   return (
     <form
-      onSubmit={handleSubmit(handleStep2Submit)}
+      onSubmit={handleSubmit(onSubmit)}
       className="flex flex-col gap-4"
     >
       {/* Section title */}
@@ -519,91 +473,14 @@ function Step2Form({ role, onBack, onSubmit, isPending }) {
         </span>
       </div>
 
-      {/* STUDENT: Cascade Select Khóa → Khoa → Ngành */}
-      {isStudent && (
-        <>
-          <Controller
-            name="cohort_code"
-            control={control}
-            render={({ field }) => (
-              <Select
-                label="Khóa học"
-                placeholder={cohortsLoading ? "Đang tải..." : "Chọn Khóa học"}
-                options={cohortsOptions}
-                required
-                disabled={cohortsLoading}
-                error={errors.cohort_code}
-                value={field.value}
-                onChange={(e) => field.onChange(e.target.value)}
-              />
-            )}
-          />
-          <Controller
-            name="faculty_code"
-            control={control}
-            render={({ field }) => (
-              <Select
-                label="Khoa"
-                placeholder={
-                  !cohortCode
-                    ? "Vui lòng chọn Khóa trước"
-                    : facultiesLoading
-                      ? "Đang tải..."
-                      : "Chọn Khoa"
-                }
-                options={facultiesOptions}
-                required
-                disabled={!cohortCode || facultiesLoading}
-                error={errors.faculty_code}
-                value={field.value}
-                onChange={(e) => field.onChange(e.target.value)}
-              />
-            )}
-          />
-          <Controller
-            name="major_code"
-            control={control}
-            render={({ field }) => (
-              <Select
-                label="Ngành học"
-                placeholder={
-                  !facultyCode
-                    ? "Vui lòng chọn Khoa trước"
-                    : majorsLoading
-                      ? "Đang tải..."
-                      : "Chọn Ngành"
-                }
-                options={majorsOptions}
-                required
-                disabled={!facultyCode || majorsLoading}
-                error={errors.major_code}
-                value={field.value}
-                onChange={(e) => field.onChange(e.target.value)}
-              />
-            )}
-          />
-        </>
-      )}
-
-      {/* LECTURER: Chỉ chọn Khoa */}
-      {!isStudent && (
-        <Controller
-          name="faculty_code"
-          control={control}
-          render={({ field }) => (
-            <Select
-              label="Khoa"
-              placeholder={facultiesLoading ? "Đang tải..." : "Chọn Khoa"}
-              options={facultiesOptions}
-              required
-              disabled={facultiesLoading}
-              error={errors.faculty_code}
-              value={field.value}
-              onChange={(e) => field.onChange(e.target.value)}
-            />
-          )}
-        />
-      )}
+      {/* CascadeSelect tái sử dụng */}
+      <CascadeSelect
+        mode={isStudent ? "STUDENT_REGISTER" : "LECTURER_REGISTER"}
+        values={values}
+        onChange={handleCascadeChange}
+        errors={errors}
+        required
+      />
 
       {/* Action Buttons */}
       <div className="flex gap-3 mt-2">

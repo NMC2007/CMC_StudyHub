@@ -131,7 +131,7 @@ export const uploadDocument = async (user, file, body) => {
  * @returns {Promise<{ statusCode: number, message: string, data: Object|null, errors: string[]|null }>}
  */
 export const getDocumentDetail = async (documentId, user) => {
-    const document = await findDocumentById(documentId, true);
+    const document = await findDocumentById(documentId, true, user);
     if (!document) {
         return {
             statusCode: 404,
@@ -163,7 +163,7 @@ export const getDocumentDetail = async (documentId, user) => {
         try {
             await recordView(user.id, documentId);
             // Re-fetch để đồng bộ số lượt xem mới nhất từ DB
-            const updatedDoc = await findDocumentById(documentId, document.is_deleted);
+            const updatedDoc = await findDocumentById(documentId, document.is_deleted, user);
             if (updatedDoc) {
                 document.view_count = updatedDoc.view_count;
             }
@@ -456,7 +456,7 @@ const checkDocumentVisibilityAccess = async (document, user) => {
  * @returns {Promise<{ statusCode: number, message: string, data: Object|null, errors: string[]|null }>}
  */
 export const toggleLikeDocument = async (documentId, user) => {
-    const document = await findDocumentById(documentId);
+    const document = await findDocumentById(documentId, false, user);
     if (!document) {
         return {
             statusCode: 404,
@@ -473,7 +473,7 @@ export const toggleLikeDocument = async (documentId, user) => {
     if (existingLike) {
         await removeLike(user.id, documentId);
         await AppDataSource.getRepository("Document").decrement({ id: documentId }, "like_count", 1);
-        const updatedDoc = await findDocumentById(documentId);
+        const updatedDoc = await findDocumentById(documentId, false, user);
         const newCount = updatedDoc ? updatedDoc.like_count : 0;
         return {
             statusCode: 200,
@@ -484,7 +484,7 @@ export const toggleLikeDocument = async (documentId, user) => {
     } else {
         await addLike(user.id, documentId);
         await AppDataSource.getRepository("Document").increment({ id: documentId }, "like_count", 1);
-        const updatedDoc = await findDocumentById(documentId);
+        const updatedDoc = await findDocumentById(documentId, false, user);
         const newCount = updatedDoc ? updatedDoc.like_count : 1;
         return {
             statusCode: 200,
@@ -502,7 +502,7 @@ export const toggleLikeDocument = async (documentId, user) => {
  * @returns {Promise<{ statusCode: number, message: string, data: Object|null, errors: string[]|null }>}
  */
 export const toggleBookmarkDocument = async (documentId, user) => {
-    const document = await findDocumentById(documentId);
+    const document = await findDocumentById(documentId, false, user);
     if (!document) {
         return {
             statusCode: 404,
