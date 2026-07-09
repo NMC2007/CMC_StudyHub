@@ -61,7 +61,7 @@ export default function LecturerDashboard() {
   } = useMyGroups();
 
   // Tính toán các con số thống kê
-  const totalMyDocs = myDocsData?.total || (myDocsData?.documents?.length || 0);
+  const totalMyDocs = myDocsData?.pagination?.total || (myDocsData?.documents?.length || 0);
   const totalViews = allMyDocsData?.documents?.reduce((acc, doc) => acc + (doc.view_count || 0), 0) || 0;
   const totalLikes = allMyDocsData?.documents?.reduce((acc, doc) => acc + (doc.like_count || 0), 0) || 0;
   const groupsList = Array.isArray(myGroupsData) ? myGroupsData : (myGroupsData?.groups || []);

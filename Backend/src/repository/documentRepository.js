@@ -105,6 +105,15 @@ export const searchDocumentsRepo = async (queryParams, user = null) => {
         query.innerJoin("doc.likes", "like_filter", "like_filter.user_id = :filterUserId", { filterUserId: user.id });
     }
 
+    // === Lọc theo chủ sở hữu (cờ mine=true cho tài liệu cá nhân của user hiện tại, hoặc theo owner_id) ===
+    const isMine = queryParams.mine === true || String(queryParams.mine).trim().toLowerCase() === "true";
+    if (isMine && user && user.id) {
+        // Sử dụng index owner_id trên bảng documents để truy vấn nhanh danh sách của user
+        query.andWhere("owner.id = :mineUserId", { mineUserId: user.id });
+    } else if (queryParams.owner_id && !isNaN(parseInt(queryParams.owner_id))) {
+        query.andWhere("owner.id = :targetOwnerId", { targetOwnerId: parseInt(queryParams.owner_id) });
+    }
+
     // === Lọc quyền truy cập theo Visibility (Security Guard cho Danh sách Tìm kiếm) ===
     if (queryParams.visibility) {
         const vis = String(queryParams.visibility).trim().toUpperCase();
@@ -125,8 +134,11 @@ export const searchDocumentsRepo = async (queryParams, user = null) => {
         } else {
             query.andWhere("doc.visibility::text = :vis", { vis: "PUBLIC" });
         }
+    } else if (isMine && user && user.id) {
+        // Khi gọi mine=true và không truyền visibility cụ thể: Trả về toàn bộ tài liệu do chính user tải lên (PUBLIC, PRIVATE, GROUP)
+        // Không áp dụng bộ lọc mặc định hạn chế bên dưới
     } else {
-        // Mặc định không truyền visibility: Trả về PUBLIC + PRIVATE chính chủ (Ẩn tài liệu GROUP khỏi API search thông thường)
+        // Mặc định không truyền visibility và không phải mine=true: Trả về PUBLIC + PRIVATE chính chủ (Ẩn tài liệu GROUP khỏi API search thông thường)
         if (user && user.role === "ADMIN") {
             // Admin thấy tất cả
         } else if (user) {

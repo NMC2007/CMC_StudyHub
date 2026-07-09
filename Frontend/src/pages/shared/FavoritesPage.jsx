@@ -58,13 +58,13 @@ export default function FavoritesPage() {
       id: 'bookmarks',
       label: 'Tài liệu đã lưu (Bookmarks)',
       icon: Bookmark,
-      count: bookmarksData?.total || 0,
+      count: bookmarksData?.pagination?.total || 0,
     },
     {
       id: 'likes',
       label: 'Tài liệu đã thích (Likes)',
       icon: Heart,
-      count: likesData?.total || 0,
+      count: likesData?.pagination?.total || 0,
     },
   ];
 
@@ -128,11 +128,11 @@ export default function FavoritesPage() {
                 ))}
               </div>
 
-              {bookmarksData.totalPages > 1 && (
+              {(bookmarksData?.pagination?.totalPages || 0) > 1 && (
                 <Pagination
-                  page={bookmarksData.page || bookmarksPage}
-                  totalPages={bookmarksData.totalPages}
-                  totalItems={bookmarksData.total}
+                  page={bookmarksData?.pagination?.page || bookmarksPage}
+                  totalPages={bookmarksData?.pagination?.totalPages || 0}
+                  totalItems={bookmarksData?.pagination?.total || 0}
                   onPageChange={(p) => {
                     setBookmarksPage(p);
                     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -169,11 +169,11 @@ export default function FavoritesPage() {
                 ))}
               </div>
 
-              {likesData.totalPages > 1 && (
+              {(likesData?.pagination?.totalPages || 0) > 1 && (
                 <Pagination
-                  page={likesData.page || likesPage}
-                  totalPages={likesData.totalPages}
-                  totalItems={likesData.total}
+                  page={likesData?.pagination?.page || likesPage}
+                  totalPages={likesData?.pagination?.totalPages || 0}
+                  totalItems={likesData?.pagination?.total || 0}
                   onPageChange={(p) => {
                     setLikesPage(p);
                     window.scrollTo({ top: 0, behavior: 'smooth' });

@@ -367,7 +367,7 @@ export const getTrashDocuments = async (queryParams, user) => {
                 total,
                 page,
                 limit: Math.max(1, Math.min(100, parseInt(queryParams.limit) || 10)),
-                total_pages: totalPages,
+                totalPages: totalPages,
             },
         },
         errors: null,

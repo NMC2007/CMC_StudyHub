@@ -139,13 +139,13 @@ export default function DocumentsPage() {
       id: "my",
       label: "Tài liệu của tôi",
       icon: FolderOpen,
-      count: myDocsData?.total || 0,
+      count: myDocsData?.pagination?.total || 0,
     },
     {
       id: "trash",
       label: "Thùng rác",
       icon: Trash2,
-      count: trashData?.total || 0,
+      count: trashData?.pagination?.total || 0,
     },
   ];
 
@@ -282,11 +282,11 @@ export default function DocumentsPage() {
                 ))}
               </div>
 
-              {myDocsData.totalPages > 1 && (
+              {(myDocsData?.pagination?.totalPages || 0) > 1 && (
                 <Pagination
-                  page={myDocsData.page || myPage}
-                  totalPages={myDocsData.totalPages}
-                  totalItems={myDocsData.total}
+                  page={myDocsData?.pagination?.page || myPage}
+                  totalPages={myDocsData?.pagination?.totalPages || 0}
+                  totalItems={myDocsData?.pagination?.total || 0}
                   onPageChange={(p) => setMyPage(p)}
                 />
               )}
@@ -323,11 +323,11 @@ export default function DocumentsPage() {
                 ))}
               </div>
 
-              {trashData.totalPages > 1 && (
+              {(trashData?.pagination?.totalPages || 0) > 1 && (
                 <Pagination
-                  page={trashData.page || trashPage}
-                  totalPages={trashData.totalPages}
-                  totalItems={trashData.total}
+                  page={trashData?.pagination?.page || trashPage}
+                  totalPages={trashData?.pagination?.totalPages || 0}
+                  totalItems={trashData?.pagination?.total || 0}
                   onPageChange={(p) => setTrashPage(p)}
                 />
               )}

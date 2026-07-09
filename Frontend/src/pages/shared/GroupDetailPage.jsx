@@ -90,7 +90,7 @@ export default function GroupDetailPage() {
       id: 'documents',
       label: 'Tài liệu nhóm',
       icon: BookOpen,
-      count: docsData?.total || 0,
+      count: docsData?.pagination?.total || 0,
     },
     {
       id: 'members',
@@ -227,11 +227,11 @@ export default function GroupDetailPage() {
                 ))}
               </div>
 
-              {docsData.totalPages > 1 && (
+              {(docsData?.pagination?.totalPages || 0) > 1 && (
                 <Pagination
-                  page={docsData.page || docPage}
-                  totalPages={docsData.totalPages}
-                  totalItems={docsData.total}
+                  page={docsData?.pagination?.page || docPage}
+                  totalPages={docsData?.pagination?.totalPages || 0}
+                  totalItems={docsData?.pagination?.total || 0}
                   onPageChange={(p) => setDocPage(p)}
                 />
               )}

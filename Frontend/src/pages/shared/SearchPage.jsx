@@ -358,7 +358,7 @@ export default function SearchPage() {
                 <span>
                   Tìm thấy{" "}
                   <strong className="text-slate-800 font-bold">
-                    {searchData?.total || 0}
+                    {searchData?.pagination?.total || 0}
                   </strong>{" "}
                   tài liệu phù hợp
                 </span>
@@ -410,11 +410,11 @@ export default function SearchPage() {
                 ))}
               </div>
 
-              {searchData?.totalPages > 1 && (
+              {(searchData?.pagination?.totalPages || 0) > 1 && (
                 <Pagination
-                  page={searchData.page || page}
-                  totalPages={searchData.totalPages}
-                  totalItems={searchData.total}
+                  page={searchData?.pagination?.page || page}
+                  totalPages={searchData?.pagination?.totalPages || 0}
+                  totalItems={searchData?.pagination?.total || 0}
                   onPageChange={(p) => {
                     setPage(p);
                     updateURLParams({ page: p });

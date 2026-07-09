@@ -41,10 +41,10 @@ export const useSearchDocuments = (params, options = {}) =>
     ...options,
   });
 
-export const useMyDocuments = (params, options = {}) =>
+export const useMyDocuments = (params = {}, options = {}) =>
   useQuery({
     queryKey: ['documents', 'my', params],
-    queryFn: () => searchDocuments(params).then((r) => r.data.data),
+    queryFn: () => searchDocuments({ mine: true, ...params }).then((r) => r.data.data),
     placeholderData: (prev) => prev,
     ...options,
   });

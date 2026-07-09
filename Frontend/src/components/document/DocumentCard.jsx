@@ -9,7 +9,7 @@
  *  - Nút Mở nhanh tài liệu qua tab mới (`window.open(file_url, '_blank')`).
  *  - Tối ưu hiệu năng: Bọc `React.memo` ngăn re-render thừa.
  */
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 import {
   Heart,
   Bookmark,
@@ -25,11 +25,13 @@ import {
   BookOpen,
   File as DefaultFileIcon,
   User,
-} from 'lucide-react';
-import Badge from '#/components/ui/Badge';
-import { useToggleLike, useToggleBookmark } from '#/hooks/useDocuments';
-import { useAuthStore } from '#/stores/useAuthStore';
-import { formatDate, formatCount } from '#/utils/formatters';
+} from "lucide-react";
+import Badge from "#/components/ui/Badge";
+import ConfirmModal from "#/components/ui/ConfirmModal";
+import EditDocumentModal from "#/components/document/EditDocumentModal";
+import { useToggleLike, useToggleBookmark, useSoftDeleteDocument } from "#/hooks/useDocuments";
+import { useAuthStore } from "#/stores/useAuthStore";
+import { formatDate, formatCount } from "#/utils/formatters";
 
 const DocumentCard = ({
   document: doc,
@@ -37,16 +39,16 @@ const DocumentCard = ({
   onDelete,
   onLikeToggle,
   onBookmarkToggle,
-  className = '',
+  className = "",
 }) => {
   if (!doc) return null;
 
   const user = useAuthStore((state) => state.user);
   const isOwner =
     user &&
-    (user.id === doc.uploader_id ||
-      user.id === doc.uploader?.id ||
-      user.role === 'ADMIN');
+    (user.id === doc.owner_id ||
+      user.id === doc.owner?.id ||
+      user.role === "ADMIN");
 
   // Mutation hooks từ TanStack Query
   const toggleLikeMutation = useToggleLike();
@@ -58,7 +60,7 @@ const DocumentCard = ({
   const [isLikeLoading, setIsLikeLoading] = useState(false);
 
   const [isBookmarked, setIsBookmarked] = useState(
-    !!(doc.is_bookmarked || doc.bookmarked)
+    !!(doc.is_bookmarked || doc.bookmarked),
   );
   const [isBookmarkLoading, setIsBookmarkLoading] = useState(false);
 
@@ -66,12 +68,31 @@ const DocumentCard = ({
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
 
+  // Local state cho Modals tự trị khi cha không truyền onEdit/onDelete
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
+  const softDeleteMutation = useSoftDeleteDocument();
+
+  const handleInternalDelete = () => {
+    softDeleteMutation.mutate(doc.id, {
+      onSuccess: () => {
+        setIsConfirmDeleteOpen(false);
+      },
+    });
+  };
+
   // Đồng bộ với props khi props thay đổi từ server/cache
   useEffect(() => {
     setIsLiked(!!(doc.is_liked || doc.liked));
     setLikeCount(doc.like_count || 0);
     setIsBookmarked(!!(doc.is_bookmarked || doc.bookmarked));
-  }, [doc.is_liked, doc.liked, doc.like_count, doc.is_bookmarked, doc.bookmarked]);
+  }, [
+    doc.is_liked,
+    doc.liked,
+    doc.like_count,
+    doc.is_bookmarked,
+    doc.bookmarked,
+  ]);
 
   // Đóng menu khi click ra ngoài
   useEffect(() => {
@@ -81,27 +102,36 @@ const DocumentCard = ({
       }
     };
     if (showMenu) {
-      window.addEventListener('mousedown', handleClickOutside);
+      window.addEventListener("mousedown", handleClickOutside);
     }
-    return () => window.removeEventListener('mousedown', handleClickOutside);
+    return () => window.removeEventListener("mousedown", handleClickOutside);
   }, [showMenu]);
 
   // Helper lấy icon theo loại tài liệu
   const getDocTypeIcon = (type) => {
     switch (type) {
-      case 'DOCUMENT':
+      case "DOCUMENT":
         return <FileText className="w-5 h-5 text-blue-600" />;
-      case 'ASSIGNMENT':
+      case "ASSIGNMENT":
         return <ClipboardList className="w-5 h-5 text-amber-600" />;
-      case 'EXAM':
+      case "EXAM":
         return <ExamIcon className="w-5 h-5 text-purple-600" />;
-      case 'SLIDE':
+      case "SLIDE":
         return <Presentation className="w-5 h-5 text-rose-600" />;
-      case 'REFERENCE':
+      case "REFERENCE":
         return <BookOpen className="w-5 h-5 text-emerald-600" />;
       default:
         return <DefaultFileIcon className="w-5 h-5 text-slate-500" />;
     }
+  };
+
+  const getAvatarUrl = (avatarPath) => {
+    if (!avatarPath) return null;
+    if (avatarPath.startsWith("http")) return avatarPath;
+    const baseUrl =
+      import.meta.env.VITE_API_BASE_URL || "http://localhost:8081/api/v1";
+    const origin = baseUrl.replace("/api/v1", "");
+    return `${origin}${avatarPath}`;
   };
 
   // ─── Handler: Optimistic Like Toggle ───────────────────────────────────────
@@ -125,7 +155,7 @@ const DocumentCard = ({
         const serverData = res?.data?.data;
         if (serverData) {
           setIsLiked(!!(serverData.is_liked ?? serverData.liked ?? newLiked));
-          if (typeof serverData.like_count === 'number') {
+          if (typeof serverData.like_count === "number") {
             setLikeCount(serverData.like_count);
           }
         }
@@ -157,7 +187,11 @@ const DocumentCard = ({
     toggleBookmarkMutation.mutate(doc.id, {
       onSuccess: (res) => {
         const serverData = res?.data?.data;
-        if (serverData && typeof (serverData.is_bookmarked ?? serverData.bookmarked) === 'boolean') {
+        if (
+          serverData &&
+          typeof (serverData.is_bookmarked ?? serverData.bookmarked) ===
+            "boolean"
+        ) {
           setIsBookmarked(serverData.is_bookmarked ?? serverData.bookmarked);
         }
       },
@@ -174,7 +208,7 @@ const DocumentCard = ({
   const handleOpenDoc = (e) => {
     e.stopPropagation();
     if (doc.file_url) {
-      window.open(doc.file_url, '_blank', 'noopener,noreferrer');
+      window.open(doc.file_url, "_blank", "noopener,noreferrer");
     }
   };
 
@@ -190,14 +224,18 @@ const DocumentCard = ({
             {getDocTypeIcon(doc.document_type)}
           </div>
           <Badge variant="type" value={doc.document_type} size="sm" />
-          {doc.visibility && doc.visibility !== 'PUBLIC' && (
+          {doc.visibility && doc.visibility !== "PUBLIC" && (
             <Badge variant="visibility" value={doc.visibility} size="sm" />
           )}
         </div>
 
         {/* Owner Menu (Sửa / Xóa) */}
         {isOwner && (
-          <div className="relative" ref={menuRef} onClick={(e) => e.stopPropagation()}>
+          <div
+            className="relative"
+            ref={menuRef}
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               type="button"
               onClick={() => setShowMenu((prev) => !prev)}
@@ -209,32 +247,36 @@ const DocumentCard = ({
 
             {showMenu && (
               <div className="absolute right-0 mt-1 w-40 bg-white rounded-xl shadow-lg border border-slate-100 py-1 z-20 animate-in fade-in zoom-in-95 duration-150">
-                {onEdit && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowMenu(false);
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMenu(false);
+                    if (onEdit) {
                       onEdit(doc);
-                    }}
-                    className="w-full flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
-                  >
-                    <Edit3 className="w-3.5 h-3.5 text-blue-600" />
-                    Chỉnh sửa
-                  </button>
-                )}
-                {onDelete && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowMenu(false);
+                    } else {
+                      setIsEditModalOpen(true);
+                    }
+                  }}
+                  className="w-full flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+                >
+                  <Edit3 className="w-3.5 h-3.5 text-blue-600" />
+                  Chỉnh sửa
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMenu(false);
+                    if (onDelete) {
                       onDelete(doc);
-                    }}
-                    className="w-full flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    Xóa tài liệu
-                  </button>
-                )}
+                    } else {
+                      setIsConfirmDeleteOpen(true);
+                    }
+                  }}
+                  className="w-full flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Xóa tài liệu
+                </button>
               </div>
             )}
           </div>
@@ -263,7 +305,8 @@ const DocumentCard = ({
         {(doc.subject?.name || doc.subject_code) && (
           <div className="mt-1 flex items-center gap-1.5">
             <span className="text-[11px] font-semibold text-slate-600 px-2 py-0.5 rounded-md bg-slate-100">
-              {doc.subject?.code || doc.subject_code || 'Môn học'}: {doc.subject?.name || ''}
+              {doc.subject?.code || doc.subject_code || "Môn học"}:{" "}
+              {doc.subject?.name || ""}
             </span>
           </div>
         )}
@@ -273,11 +316,25 @@ const DocumentCard = ({
       <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 text-xs text-slate-500">
         {/* Uploader info */}
         <div className="flex items-center gap-1.5 min-w-0 truncate">
-          <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 shrink-0">
-            <User className="w-3.5 h-3.5" />
+          <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 shrink-0 overflow-hidden relative">
+            {doc.owner?.avatar ? (
+              <img
+                src={getAvatarUrl(doc.owner.avatar)}
+                alt={doc.owner.full_name || doc.owner.username || "Avatar"}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.style.display = "none";
+                  e.target.nextSibling &&
+                    (e.target.nextSibling.style.display = "block");
+                }}
+              />
+            ) : null}
+            <User
+              className={`w-3.5 h-3.5 ${doc.owner?.avatar ? "hidden" : ""}`}
+            />
           </div>
           <span className="font-medium text-slate-700 truncate">
-            {doc.uploader?.full_name || doc.uploader?.username || 'Người dùng'}
+            {doc.owner?.full_name || doc.owner?.username || "Người dùng"}
           </span>
           <span className="text-slate-300">•</span>
           <span className="shrink-0">{formatDate(doc.created_at)}</span>
@@ -301,12 +358,14 @@ const DocumentCard = ({
             disabled={isLikeLoading}
             className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-all cursor-pointer ${
               isLiked
-                ? 'bg-rose-50 text-rose-600 font-bold'
-                : 'hover:bg-slate-100 text-slate-500 hover:text-slate-800'
+                ? "bg-rose-50 text-rose-600 font-bold"
+                : "hover:bg-slate-100 text-slate-500 hover:text-slate-800"
             }`}
-            title={isLiked ? 'Bỏ thích' : 'Thích tài liệu'}
+            title={isLiked ? "Bỏ thích" : "Thích tài liệu"}
           >
-            <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-rose-500 text-rose-500' : ''}`} />
+            <Heart
+              className={`w-3.5 h-3.5 ${isLiked ? "fill-rose-500 text-rose-500" : ""}`}
+            />
             <span>{formatCount(likeCount)}</span>
           </button>
 
@@ -317,12 +376,14 @@ const DocumentCard = ({
             disabled={isBookmarkLoading}
             className={`p-1.5 rounded-lg transition-all cursor-pointer ${
               isBookmarked
-                ? 'bg-brand-student-light text-brand-student'
-                : 'hover:bg-slate-100 text-slate-500 hover:text-slate-800'
+                ? "bg-brand-student-light text-brand-student"
+                : "hover:bg-slate-100 text-slate-500 hover:text-slate-800"
             }`}
-            title={isBookmarked ? 'Bỏ lưu' : 'Lưu tài liệu'}
+            title={isBookmarked ? "Bỏ lưu" : "Lưu tài liệu"}
           >
-            <Bookmark className={`w-3.5 h-3.5 ${isBookmarked ? 'fill-brand-student text-brand-student' : ''}`} />
+            <Bookmark
+              className={`w-3.5 h-3.5 ${isBookmarked ? "fill-brand-student text-brand-student" : ""}`}
+            />
           </button>
 
           {/* External Read link */}
@@ -336,6 +397,33 @@ const DocumentCard = ({
           )}
         </div>
       </div>
+
+      {/* Modals tự trị khi component cha không truyền onEdit / onDelete */}
+      {!onEdit && (
+        <div onClick={(e) => e.stopPropagation()}>
+          <EditDocumentModal
+            isOpen={isEditModalOpen}
+            onClose={() => setIsEditModalOpen(false)}
+            document={doc}
+          />
+        </div>
+      )}
+
+      {!onDelete && (
+        <div onClick={(e) => e.stopPropagation()}>
+          <ConfirmModal
+            isOpen={isConfirmDeleteOpen}
+            onClose={() => setIsConfirmDeleteOpen(false)}
+            onConfirm={handleInternalDelete}
+            title="Xác nhận chuyển vào Thùng rác"
+            description={`Bạn có chắc chắn muốn chuyển tài liệu "${doc.title || ""}" vào thùng rác? Bạn có thể khôi phục lại trong tab Thùng rác.`}
+            confirmText="Chuyển vào Thùng rác"
+            cancelText="Hủy bỏ"
+            variant="danger"
+            loading={softDeleteMutation.isPending}
+          />
+        </div>
+      )}
     </div>
   );
 };
