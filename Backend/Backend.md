@@ -169,7 +169,7 @@ Tách biệt thành hai cấu hình Middleware chuyên biệt:
 - `POST /api/v1/auth/refresh`: Nhận Refresh Token từ body/cookie, kiểm tra trong DB bảng `refresh_tokens`. Nếu hợp lệ và chưa hết hạn, cấp lại AccessToken mới.
 - `POST /api/v1/auth/logout`: Xóa bản ghi Refresh Token tương ứng trong database.
 - `GET /api/v1/users/profile`: Lấy thông tin tài khoản hiện tại.
-- `GET /api/v1/users`: Lấy danh sách toàn bộ người dùng trong hệ thống (kèm thông tin Khóa, Khoa, Ngành). Yêu cầu quyền truy cập `ADMIN`.
+- `GET /api/v1/users`: Lấy danh sách toàn bộ người dùng trong hệ thống kèm phân trang & lọc (`page`, `limit`, `role`, `q`). Yêu cầu quyền truy cập `ADMIN`.
 - `PUT /api/v1/users/profile`: Cập nhật thông tự cơ bản.
 - `PUT /api/v1/users/avatar`: Nhận file ảnh từ Avatar Multer Middleware, xóa file ảnh cũ vật lý (nếu có), cập nhật đường dẫn `avatar` mới vào bảng `users`.
 
@@ -203,7 +203,7 @@ Tách biệt thành hai cấu hình Middleware chuyên biệt:
 ### 4.5. Nhóm học tập (Internal Class Groups)
 
 - `POST /api/v1/groups`: Tạo nhóm học tập (Gán `owner_id = req.user.id`). Người tạo tự động trở thành thành viên đầu tiên trong bảng `group_members`.
-- `GET /api/v1/groups`: Lấy danh sách nhóm của tôi.
+- `GET /api/v1/groups`: Lấy danh sách nhóm của tôi (hoặc toàn bộ danh sách nhóm trong hệ thống nếu là `ADMIN`).
 - `GET /api/v1/groups/:id`: Lấy chi tiết nhóm và danh sách thành viên.
 - `POST /api/v1/groups/:id/members`: Thêm nhiều thành viên vào nhóm (Chỉ Owner).
 - `DELETE /api/v1/groups/:id/members/:userId`: Xóa thành viên ra khỏi nhóm (Chỉ Owner).
@@ -213,9 +213,10 @@ Tách biệt thành hai cấu hình Middleware chuyên biệt:
 - `DELETE /api/v1/groups/:id/documents/:documentId`: Gỡ tài liệu khỏi nhóm.
 - `DELETE /api/v1/groups/:id`: **Giải tán nhóm**. Cấu hình `ON DELETE CASCADE` tự động dọn dẹp các bản ghi liên quan trong bảng `group_members` và `group_documents`. Hệ thống tự động xóa mềm tài liệu nội bộ (tag GROUP) của nhóm. Chỉ Owner mới có quyền này.
 
-### 4.6. Cấu trúc Học thuật & Admin Cron Triggers (Dành cho Admin)
+### 4.6. Cấu trúc Học thuật, Admin Stats & Cron Triggers (Dành cho Admin)
 
 - `GET / POST / PUT / DELETE /api/v1/academic/*`: Các API CRUD cho Cohorts, Faculties, Majors, Subjects.
+- `GET /api/v1/admin/stats`: Lấy các chỉ số thống kê tổng quan hệ thống (`total_users`, `total_documents`, `total_groups`, `total_views`).
 - `POST /api/v1/admin/cron/trigger/trash-cleanup`: API kích hoạt thủ công tác vụ dọn rác.
 - `POST /api/v1/admin/cron/trigger/token-cleanup`: API kích hoạt thủ công dọn token hết hạn.
 

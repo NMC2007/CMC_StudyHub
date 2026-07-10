@@ -70,11 +70,11 @@ export const updateAvatar = async (req, res, next) => {
 
 /**
  * GET /api/v1/users
- * Lấy danh sách toàn bộ người dùng (Chỉ ADMIN)
+ * Lấy danh sách toàn bộ người dùng kèm phân trang & bộ lọc (Chỉ ADMIN)
  */
 export const getAllUsers = async (req, res, next) => {
     try {
-        const result = await userService.getAllUsers();
+        const result = await userService.getAllUsers(req.query);
 
         return res
             .status(result.statusCode)

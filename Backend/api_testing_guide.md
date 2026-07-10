@@ -75,11 +75,35 @@ _(Lưu ý: Bắt đầu từ đây, mọi API yêu cầu đính kèm Header: `Au
 - **Endpoint:** `GET /users/profile`
 - **Quyền:** Mọi User đăng nhập
 
-### 2.2. Lấy danh sách toàn bộ người dùng
+### 2.2. Lấy danh sách toàn bộ người dùng (Phân trang & Lọc)
 
 - **Endpoint:** `GET /users`
 - **Quyền:** Chỉ Admin (`ADMIN`)
-- **Mô tả:** Trả về danh sách toàn bộ tài khoản trong hệ thống kèm thông tin Khóa/Khoa/Ngành.
+- **Query Parameters (Tuỳ chọn):**
+  - `page`: Trang hiện tại (Mặc định: 1).
+  - `limit`: Số lượng mỗi trang (Mặc định: 20, tối đa 100).
+  - `role`: Lọc theo quyền `ALL` / `STUDENT` / `LECTURER` / `ADMIN` (Mặc định: `ALL`).
+  - `q`: Từ khóa tìm kiếm theo Tên, Email, Username, SĐT.
+- **Mô tả:** Trả về danh sách tài khoản trong hệ thống kèm đối tượng `pagination` (phục vụ Admin Panel).
+- **Response mẫu:**
+  ```json
+  {
+    "statusCode": 200,
+    "message": "Lấy danh sách người dùng thành công.",
+    "data": {
+      "users": [
+        { "id": 1, "full_name": "Nguyễn Văn A", "role": "STUDENT", "email": "nva@studyhub.edu.vn" }
+      ],
+      "pagination": {
+        "total": 150,
+        "page": 1,
+        "limit": 20,
+        "totalPages": 8
+      }
+    },
+    "errors": null
+  }
+  ```
 
 ### 2.3. Cập nhật thông tin cá nhân
 
@@ -177,7 +201,8 @@ _(Lưu ý: Bắt đầu từ đây, mọi API yêu cầu đính kèm Header: `Au
   ```json
   { "name": "Nhóm Java", "description": "Chia sẻ môn Java" }
   ```
-- **Lấy danh sách nhóm của tôi:** `GET /groups`
+- **Lấy danh sách nhóm:** `GET /groups`
+  _(Lưu ý: Nếu user là `STUDENT` hoặc `LECTURER`, trả về các nhóm mà user sở hữu/tham gia. Nếu là `ADMIN`, tự động trả về toàn bộ danh sách nhóm trong hệ thống để quản lý)._
 - **Lấy chi tiết nhóm:** `GET /groups/:id`
 
 ### 4.2. Quản lý Thành viên
@@ -213,32 +238,57 @@ _(Dùng cho trang Quản trị viên, GET là Public, POST/PUT/DELETE yêu cầu
 ### 5.1. Cohorts (Khóa học)
 
 - **GET** `/academic/cohorts`
-- **POST/PUT** `/academic/cohorts` (`{ "code": "K1", "name": "Khóa 1", "start_year": 2023, "end_year": 2027 }`)
+- **POST** `/academic/cohorts` (`{ "code": "K1", "name": "Khóa 1", "start_year": 2023, "end_year": 2027 }`)
+- **PUT** `/academic/cohorts/:id` (`{ "code": "K1", "name": "Khóa 1 (Cập nhật)", "start_year": 2023, "end_year": 2027 }`)
 - **DELETE** `/academic/cohorts/:id`
 
 ### 5.2. Faculties (Khoa)
 
 - **GET** `/academic/faculties`
-- **POST/PUT** `/academic/faculties` (`{ "code": "CNTT", "name": "Khoa CNTT" }`)
+- **POST** `/academic/faculties` (`{ "code": "CNTT", "name": "Khoa CNTT" }`)
+- **PUT** `/academic/faculties/:id` (`{ "code": "CNTT", "name": "Khoa CNTT (Cập nhật)" }`)
 - **DELETE** `/academic/faculties/:id`
 
 ### 5.3. Majors (Ngành học)
 
 - **GET** `/academic/majors?faculty_code=CNTT`
-- **POST/PUT** `/academic/majors` (`{ "code": "BIT", "name": "Ngành IT", "faculty_code": "CNTT" }`)
+- **POST** `/academic/majors` (`{ "code": "BIT", "name": "Ngành IT", "faculty_code": "CNTT" }`)
+- **PUT** `/academic/majors/:id` (`{ "code": "BIT", "name": "Ngành IT (Cập nhật)", "faculty_code": "CNTT" }`)
 - **DELETE** `/academic/majors/:id`
 
 ### 5.4. Subjects (Môn học)
 
 - **GET** `/academic/subjects?major_code=BIT`
-- **POST/PUT** `/academic/subjects` (`{ "code": "IT101", "name": "Java", "major_codes": ["BIT", "BAI"] }`)
+- **POST** `/academic/subjects` (`{ "code": "IT101", "name": "Java", "major_codes": ["BIT", "BAI"] }`)
+- **PUT** `/academic/subjects/:id` (`{ "code": "IT101", "name": "Java (Cập nhật)", "major_codes": ["BIT", "BAI"] }`)
 - **DELETE** `/academic/subjects/:id`
 
 ---
 
-## 6. MODULE ADMIN CRON TRIGGERS (BẢO TRÌ TỰ ĐỘNG)
+## 6. MODULE ADMIN (QUẢN TRỊ VIÊN & CRON TRIGGERS)
 
-_(Yêu cầu quyền ADMIN)_
+_(Toàn bộ endpoint yêu cầu Header `Authorization: Bearer <token_admin>` và quyền `ADMIN`)_
+
+### 6.1. Thống kê hệ thống (System Stats)
+
+- **Endpoint:** `GET /admin/stats`
+- **Mô tả:** Trả về các chỉ số tổng quan phục vụ trang Admin Dashboard (`total_users`, `total_documents`, `total_groups`, `total_views`).
+- **Response mẫu:**
+  ```json
+  {
+    "statusCode": 200,
+    "message": "Lấy thống kê hệ thống thành công.",
+    "data": {
+      "total_users": 150,
+      "total_documents": 450,
+      "total_groups": 25,
+      "total_views": 12890
+    },
+    "errors": null
+  }
+  ```
+
+### 6.2. Cron Jobs Triggers (Bảo trì tự động)
 
 - **Dọn dẹp tài liệu trong thùng rác quá hạn (Mặc định >15 ngày):**
   - **Endpoint:** `POST /admin/cron/trigger/trash-cleanup`

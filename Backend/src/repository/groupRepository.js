@@ -124,6 +124,36 @@ export const findGroupsByUserIdRepo = async (userId) => {
 };
 
 /**
+ * Lấy danh sách toàn bộ nhóm trong hệ thống (Dành cho Quản trị viên).
+ * @param {number} currentUserId - ID user Admin (để tính cờ is_member)
+ * @returns {Promise<Array>}
+ */
+export const findAllGroupsRepo = async (currentUserId) => {
+    const { entities, raw } = await groupRepo
+        .createQueryBuilder("group")
+        .leftJoinAndSelect("group.owner", "owner")
+        .addSelect("(SELECT COUNT(*) FROM group_members gm WHERE gm.group_id = group.id)", "member_count")
+        .addSelect(
+            `(SELECT COUNT(*) FROM group_members gm WHERE gm.group_id = group.id AND gm.user_id = ${Number(currentUserId) || -1})`,
+            "is_my_member"
+        )
+        .orderBy("group.created_at", "DESC")
+        .getRawAndEntities();
+
+    return entities.map((group) => {
+        const rawRow = raw.find((r) => Number(r.group_id ?? r.id) === Number(group.id));
+        const count = rawRow && rawRow.member_count ? Number(rawRow.member_count) : 0;
+        const isMyMember = rawRow && Number(rawRow.is_my_member) > 0;
+        const isOwner = group.owner?.id === currentUserId;
+        return {
+            ...group,
+            member_count: count,
+            is_member: isOwner || isMyMember,
+        };
+    });
+};
+
+/**
  * Kiểm tra người dùng có phải là thành viên hoặc chủ nhóm hay không.
  * @param {number} groupId
  * @param {number} userId

@@ -24,6 +24,7 @@ import academicRouter from "./routes/academicRouters.js";
 import documentRouter from "./routes/documentRouters.js";
 import groupRouter from "./routes/groupRouters.js";
 import cronRouter from "./routes/cronRouters.js";
+import adminRouter from "./routes/adminRouters.js";
 import { initCronJobs } from "./jobs/cronJobs.js";
 import { errorHandler } from "./advice/errorHandler.js";
 
@@ -65,6 +66,7 @@ app.use("/api/v1/academic", academicRouter);
 app.use("/api/v1/documents", documentRouter);
 app.use("/api/v1/groups", groupRouter);
 app.use("/api/v1/admin/cron", cronRouter);
+app.use("/api/v1/admin", adminRouter);
 
 // ==========================================
 

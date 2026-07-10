@@ -176,17 +176,26 @@ export const updateUserAvatar = async (userId, file) => {
 };
 
 /**
- * Lấy danh sách toàn bộ người dùng.
- * @returns {Promise<{ statusCode: number, message: string, data: Object[], errors: string[]|null }>}
+ * Lấy danh sách toàn bộ người dùng kèm phân trang và lọc.
+ * @param {Object} queryParams - { page, limit, role, q }
+ * @returns {Promise<{ statusCode: number, message: string, data: Object, errors: string[]|null }>}
  */
-export const getAllUsers = async () => {
-    const users = await findAllUsersProfile();
-    const mappedUsers = users.map(toUserResponse);
+export const getAllUsers = async (queryParams = {}) => {
+    const result = await findAllUsersProfile(queryParams);
+    const mappedUsers = result.users.map(toUserResponse);
 
     return {
         statusCode: 200,
         message: "Lấy danh sách người dùng thành công.",
-        data: mappedUsers,
+        data: {
+            users: mappedUsers,
+            pagination: {
+                total: result.total,
+                page: result.page,
+                limit: Math.max(1, Math.min(100, parseInt(queryParams.limit) || 20)),
+                totalPages: result.totalPages,
+            },
+        },
         errors: null,
     };
 };

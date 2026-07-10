@@ -15,6 +15,7 @@ import {
     addGroupMembersBatchRepo,
     removeGroupMemberRepo,
     findGroupsByUserIdRepo,
+    findAllGroupsRepo,
     isUserInGroupRepo,
     shareDocumentToGroupRepo,
     removeDocumentFromGroupRepo,
@@ -66,12 +67,15 @@ export const createGroupService = async (user, body) => {
 };
 
 /**
- * Lấy danh sách nhóm học tập của user (sở hữu hoặc tham gia).
+ * Lấy danh sách nhóm học tập của user (hoặc toàn bộ nhóm nếu là Admin).
  * @param {Object} user
  * @returns {Promise<Object>}
  */
 export const getMyGroupsService = async (user) => {
-    const groups = await findGroupsByUserIdRepo(user.id);
+    const groups = user.role === "ADMIN" 
+        ? await findAllGroupsRepo(user.id)
+        : await findGroupsByUserIdRepo(user.id);
+
     return {
         statusCode: 200,
         message: "Lấy danh sách nhóm học tập thành công.",
