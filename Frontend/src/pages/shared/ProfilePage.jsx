@@ -31,6 +31,7 @@ import Button from '#/components/ui/Button';
 import Input from '#/components/ui/Input';
 import { useProfile, useUpdateProfile, useUpdateAvatar } from '#/hooks/useUsers';
 import { updateProfileSchema } from '#/utils/validators';
+import { getAvatarUrl } from '#/utils/formatters';
 
 export default function ProfilePage() {
   const storeUser = useAuthStore((s) => s.user);
@@ -103,7 +104,7 @@ export default function ProfilePage() {
     });
   };
 
-  const avatarUrl = user.avatar_url || user.avatar;
+  const avatarUrl = getAvatarUrl(user.avatar || user.avatar_url);
 
   return (
     <PageWrapper title="Hồ sơ cá nhân">
@@ -114,20 +115,23 @@ export default function ProfilePage() {
 
         {/* Avatar Section */}
         <div className="relative shrink-0 mt-4 sm:mt-2 z-10">
-          <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-white p-1.5 shadow-md ring-1 ring-slate-200 flex items-center justify-center overflow-hidden">
+          <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-white p-1.5 shadow-md ring-1 ring-slate-200 flex items-center justify-center overflow-hidden relative">
             {avatarUrl ? (
               <img
                 src={avatarUrl}
                 alt={user.full_name || user.username}
                 className="w-full h-full object-cover rounded-2xl"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
+                }}
               />
-            ) : (
-              <div className="w-full h-full bg-brand-student-light text-brand-student font-extrabold text-3xl sm:text-4xl flex items-center justify-center rounded-2xl">
-                {user.full_name?.charAt(0).toUpperCase() ||
-                  user.username?.charAt(0).toUpperCase() ||
-                  'U'}
-              </div>
-            )}
+            ) : null}
+            <div className={`w-full h-full bg-brand-student-light text-brand-student font-extrabold text-3xl sm:text-4xl flex items-center justify-center rounded-2xl ${avatarUrl ? 'hidden' : ''}`}>
+              {user.full_name?.charAt(0).toUpperCase() ||
+                user.username?.charAt(0).toUpperCase() ||
+                'U'}
+            </div>
           </div>
 
           {/* Upload Button */}

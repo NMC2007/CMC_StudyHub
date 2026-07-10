@@ -71,3 +71,14 @@ export const shareDocumentToGroup = (groupId, body) =>
  */
 export const getGroupDocuments = (groupId, params) =>
   api.get(`/groups/${groupId}/documents`, { params });
+
+/**
+ * Tải trực tiếp tài liệu mới vào nhóm (visibility = GROUP).
+ * @param {number} groupId
+ * @param {FormData} formData
+ * @returns Promise
+ */
+export const uploadGroupDocument = (groupId, formData) =>
+  api.post(`/groups/${groupId}/documents/upload`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });

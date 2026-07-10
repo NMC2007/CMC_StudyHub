@@ -14,6 +14,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Menu, Search, User } from 'lucide-react';
 import { useAuthStore } from '#/stores/useAuthStore';
+import { getAvatarUrl } from '#/utils/formatters';
 
 export default function TopNavbar({ onToggleSidebar }) {
   const navigate = useNavigate();
@@ -28,6 +29,8 @@ export default function TopNavbar({ onToggleSidebar }) {
       setSearchQuery('');
     }
   };
+
+  const avatarUrl = getAvatarUrl(user?.avatar || user?.avatar_url);
 
   return (
     <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-md border-b border-border px-4 md:px-6">
@@ -65,16 +68,19 @@ export default function TopNavbar({ onToggleSidebar }) {
               {user?.full_name || 'User'}
             </p>
           </div>
-          <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center shrink-0 overflow-hidden">
-            {user?.avatar_url ? (
+          <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center shrink-0 overflow-hidden relative">
+            {avatarUrl ? (
               <img
-                src={user.avatar_url}
-                alt={user.full_name}
+                src={avatarUrl}
+                alt={user?.full_name || 'Avatar'}
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  if (e.target.nextSibling) e.target.nextSibling.style.display = 'block';
+                }}
               />
-            ) : (
-              <User className="w-4 h-4 text-slate-500" />
-            )}
+            ) : null}
+            <User className={`w-4 h-4 text-slate-500 ${avatarUrl ? 'hidden' : ''}`} />
           </div>
         </div>
       </div>

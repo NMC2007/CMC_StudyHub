@@ -174,3 +174,18 @@ export const formatCount = (num) => {
   if (num < 1_000_000) return `${(num / 1000).toFixed(1).replace('.0', '')}K`;
   return `${(num / 1_000_000).toFixed(1).replace('.0', '')}M`;
 };
+
+// ─── AVATAR URL ───────────────────────────────────────────────────────────────
+
+/**
+ * Chuyển đổi đường dẫn avatar (tương đối từ backend hoặc tuyệt đối) thành URL đầy đủ hợp lệ.
+ * @param {string} avatarPath
+ * @returns {string|null}
+ */
+export const getAvatarUrl = (avatarPath) => {
+  if (!avatarPath) return null;
+  if (typeof avatarPath !== 'string') return null;
+  if (avatarPath.startsWith('http') || avatarPath.startsWith('data:')) return avatarPath;
+  const origin = import.meta.env.VITE_API_URL?.replace(/\/api\/v1\/?$/, '') || 'http://localhost:8081';
+  return `${origin}${avatarPath.startsWith('/') ? '' : '/'}${avatarPath}`;
+};

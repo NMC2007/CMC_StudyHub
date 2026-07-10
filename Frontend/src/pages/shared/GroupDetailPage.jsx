@@ -13,7 +13,7 @@ import { useParams, useSearchParams, useNavigate } from 'react-router';
 import {
   Users,
   BookOpen,
-  Share2,
+  Upload,
   UserPlus,
   ArrowLeft,
   Crown,
@@ -31,7 +31,7 @@ import Pagination from '#/components/ui/Pagination';
 import DocumentCard from '#/components/document/DocumentCard';
 import MemberItem from '#/components/group/MemberItem';
 import AddMemberModal from '#/components/group/AddMemberModal';
-import ShareToGroupModal from '#/components/group/ShareToGroupModal';
+import UploadToGroupModal from '#/components/group/UploadToGroupModal';
 
 import {
   useGroupDetail,
@@ -170,12 +170,12 @@ export default function GroupDetailPage() {
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto shrink-0 justify-start md:justify-end">
           <Button
             type="button"
-            icon={Share2}
+            icon={Upload}
             onClick={() => setIsShareDocOpen(true)}
             size="sm"
             className="shadow-sm"
           >
-            Chia sẻ tài liệu
+            Tải tài liệu lên nhóm
           </Button>
 
           {isOwner && (
@@ -214,8 +214,8 @@ export default function GroupDetailPage() {
           ) : !docsData?.documents || docsData.documents.length === 0 ? (
             <EmptyState
               title="Nhóm chưa có tài liệu nào"
-              message="Chưa có thành viên nào chia sẻ tài liệu vào nhóm này. Hãy bấm Chia sẻ tài liệu để đóng góp giáo trình hoặc bài tập ngay."
-              actionText="Chia sẻ tài liệu đầu tiên"
+              message="Chưa có thành viên nào tải tài liệu vào nhóm này. Hãy bấm Tải tài liệu lên nhóm để chia sẻ giáo trình hoặc bài tập ngay."
+              actionText="Tải tài liệu đầu tiên"
               onAction={() => setIsShareDocOpen(true)}
               icon={BookOpen}
             />
@@ -284,7 +284,7 @@ export default function GroupDetailPage() {
         group={group}
       />
 
-      <ShareToGroupModal
+      <UploadToGroupModal
         isOpen={isShareDocOpen}
         onClose={() => setIsShareDocOpen(false)}
         group={group}

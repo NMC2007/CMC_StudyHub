@@ -9,6 +9,7 @@
  */
 import React from "react";
 import { User, Crown, UserMinus } from "lucide-react";
+import { getAvatarUrl } from "#/utils/formatters";
 
 const MemberItem = ({
   member,
@@ -22,6 +23,7 @@ const MemberItem = ({
 
   // Lấy thông tin user (hỗ trợ cả cấu trúc member.user và member trực tiếp)
   const userObj = member.user || member;
+  const avatarUrl = getAvatarUrl(userObj.avatar || userObj.avatar_url);
   const isLeader =
     member.role === "LEADER" ||
     member.is_leader ||
@@ -35,20 +37,36 @@ const MemberItem = ({
       {/* Left: Avatar + Info */}
       <div className="flex items-center gap-3 min-w-0">
         <div
-          className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
+          className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden relative ${
             isLeader
               ? "bg-amber-100 text-amber-700 ring-2 ring-amber-300"
               : "bg-slate-100 text-slate-600"
           }`}
         >
-          {isLeader ? (
-            <Crown className="w-5 h-5 text-amber-600" />
-          ) : (
-            userObj.full_name?.charAt(0).toUpperCase() ||
-            userObj.username?.charAt(0).toUpperCase() || (
-              <User className="w-5 h-5" />
-            )
-          )}
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt={userObj.full_name || userObj.username || "Avatar"}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.target.style.display = "none";
+                if (e.target.nextSibling)
+                  e.target.nextSibling.style.display = "flex";
+              }}
+            />
+          ) : null}
+          <div
+            className={`w-full h-full flex items-center justify-center ${avatarUrl ? "hidden" : ""}`}
+          >
+            {isLeader ? (
+              <Crown className="w-5 h-5 text-amber-600" />
+            ) : (
+              userObj.full_name?.charAt(0).toUpperCase() ||
+              userObj.username?.charAt(0).toUpperCase() || (
+                <User className="w-5 h-5" />
+              )
+            )}
+          </div>
         </div>
 
         <div className="min-w-0 flex-1">

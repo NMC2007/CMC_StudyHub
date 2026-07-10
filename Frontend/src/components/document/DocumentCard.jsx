@@ -25,13 +25,19 @@ import {
   BookOpen,
   File as DefaultFileIcon,
   User,
+  Share2,
 } from "lucide-react";
 import Badge from "#/components/ui/Badge";
 import ConfirmModal from "#/components/ui/ConfirmModal";
 import EditDocumentModal from "#/components/document/EditDocumentModal";
-import { useToggleLike, useToggleBookmark, useSoftDeleteDocument } from "#/hooks/useDocuments";
+import ShareDocToGroupModal from "#/components/document/ShareDocToGroupModal";
+import {
+  useToggleLike,
+  useToggleBookmark,
+  useSoftDeleteDocument,
+} from "#/hooks/useDocuments";
 import { useAuthStore } from "#/stores/useAuthStore";
-import { formatDate, formatCount } from "#/utils/formatters";
+import { formatDate, formatCount, getAvatarUrl } from "#/utils/formatters";
 
 const DocumentCard = ({
   document: doc,
@@ -71,6 +77,7 @@ const DocumentCard = ({
   // Local state cho Modals tự trị khi cha không truyền onEdit/onDelete
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const softDeleteMutation = useSoftDeleteDocument();
 
   const handleInternalDelete = () => {
@@ -123,15 +130,6 @@ const DocumentCard = ({
       default:
         return <DefaultFileIcon className="w-5 h-5 text-slate-500" />;
     }
-  };
-
-  const getAvatarUrl = (avatarPath) => {
-    if (!avatarPath) return null;
-    if (avatarPath.startsWith("http")) return avatarPath;
-    const baseUrl =
-      import.meta.env.VITE_API_BASE_URL || "http://localhost:8081/api/v1";
-    const origin = baseUrl.replace("/api/v1", "");
-    return `${origin}${avatarPath}`;
   };
 
   // ─── Handler: Optimistic Like Toggle ───────────────────────────────────────
@@ -212,6 +210,32 @@ const DocumentCard = ({
     }
   };
 
+  const getRoleBadge = (role) => {
+    const normalizedRole = String(role || "").toUpperCase();
+    switch (normalizedRole) {
+      case "STUDENT":
+        return (
+          <span className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 border border-blue-100">
+            Sinh viên
+          </span>
+        );
+      case "LECTURER":
+        return (
+          <span className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 border border-emerald-100">
+            Giảng viên
+          </span>
+        );
+      case "ADMIN":
+        return (
+          <span className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded bg-rose-50 text-rose-600 border border-rose-100">
+            Admin
+          </span>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div
       onClick={handleOpenDoc}
@@ -266,6 +290,17 @@ const DocumentCard = ({
                   type="button"
                   onClick={() => {
                     setShowMenu(false);
+                    setIsShareModalOpen(true);
+                  }}
+                  className="w-full flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+                >
+                  <Share2 className="w-3.5 h-3.5 text-brand-student" />
+                  Chia sẻ vào nhóm
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMenu(false);
                     if (onDelete) {
                       onDelete(doc);
                     } else {
@@ -281,6 +316,39 @@ const DocumentCard = ({
             )}
           </div>
         )}
+      </div>
+
+      {/* ─── Uploader & Date Row (Phía dưới tag, trên tiêu đề tài liệu) ─── */}
+      <div className="flex items-center gap-2.5 text-xs text-slate-500 -mt-1 pb-1">
+        <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 shrink-0 overflow-hidden relative">
+          {doc.owner?.avatar ? (
+            <img
+              src={getAvatarUrl(doc.owner.avatar)}
+              alt={doc.owner.full_name || doc.owner.username || "Avatar"}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.target.style.display = "none";
+                e.target.nextSibling &&
+                  (e.target.nextSibling.style.display = "block");
+              }}
+            />
+          ) : null}
+          <User className={`w-4 h-4 ${doc.owner?.avatar ? "hidden" : ""}`} />
+        </div>
+        <div className="flex flex-col min-w-0 leading-tight">
+          <div className="flex items-center gap-1.5">
+            <span className="font-semibold text-slate-700 truncate">
+              {doc.owner?.full_name || doc.owner?.username || "Người dùng"}
+            </span>
+            <span className="text-slate-300">•</span>
+            <span className="shrink-0 text-slate-400">
+              {formatDate(doc.created_at)}
+            </span>
+          </div>
+          {doc.owner?.role && (
+            <div className="mt-0.5">{getRoleBadge(doc.owner.role)}</div>
+          )}
+        </div>
       </div>
 
       {/* ─── Body: Title, Description & Subject ─── */}
@@ -312,43 +380,18 @@ const DocumentCard = ({
         )}
       </div>
 
-      {/* ─── Footer: Uploader, Date & Action Stats (View/Like/Bookmark) ─── */}
+      {/* ─── Footer: Action Stats (View/Like/Bookmark & Open) ─── */}
       <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 text-xs text-slate-500">
-        {/* Uploader info */}
-        <div className="flex items-center gap-1.5 min-w-0 truncate">
-          <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 shrink-0 overflow-hidden relative">
-            {doc.owner?.avatar ? (
-              <img
-                src={getAvatarUrl(doc.owner.avatar)}
-                alt={doc.owner.full_name || doc.owner.username || "Avatar"}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.target.style.display = "none";
-                  e.target.nextSibling &&
-                    (e.target.nextSibling.style.display = "block");
-                }}
-              />
-            ) : null}
-            <User
-              className={`w-3.5 h-3.5 ${doc.owner?.avatar ? "hidden" : ""}`}
-            />
-          </div>
-          <span className="font-medium text-slate-700 truncate">
-            {doc.owner?.full_name || doc.owner?.username || "Người dùng"}
-          </span>
-          <span className="text-slate-300">•</span>
-          <span className="shrink-0">{formatDate(doc.created_at)}</span>
-        </div>
-
-        {/* Interactive Stats Button Bar */}
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           {/* View count */}
           <div
-            className="flex items-center gap-1 px-2 py-1 rounded-lg text-slate-500"
+            className="flex items-center gap-1 px-2 py-1 rounded-lg text-slate-500 bg-slate-50"
             title={`${doc.view_count || 0} lượt xem`}
           >
-            <Eye className="w-3.5 h-3.5" />
-            <span>{formatCount(doc.view_count || 0)}</span>
+            <Eye className="w-3.5 h-3.5 text-slate-400" />
+            <span className="font-medium">
+              {formatCount(doc.view_count || 0)}
+            </span>
           </div>
 
           {/* Like button */}
@@ -359,7 +402,7 @@ const DocumentCard = ({
             className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-all cursor-pointer ${
               isLiked
                 ? "bg-rose-50 text-rose-600 font-bold"
-                : "hover:bg-slate-100 text-slate-500 hover:text-slate-800"
+                : "hover:bg-slate-100 text-slate-500 hover:text-slate-800 bg-slate-50"
             }`}
             title={isLiked ? "Bỏ thích" : "Thích tài liệu"}
           >
@@ -368,7 +411,9 @@ const DocumentCard = ({
             />
             <span>{formatCount(likeCount)}</span>
           </button>
+        </div>
 
+        <div className="flex items-center gap-1 shrink-0">
           {/* Bookmark button */}
           <button
             type="button"
@@ -385,6 +430,22 @@ const DocumentCard = ({
               className={`w-3.5 h-3.5 ${isBookmarked ? "fill-brand-student text-brand-student" : ""}`}
             />
           </button>
+
+          {/* Share to group button */}
+          {(doc.visibility === "PUBLIC" || isOwner) &&
+            doc.visibility !== "GROUP" && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsShareModalOpen(true);
+                }}
+                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-brand-student transition-all cursor-pointer"
+                title="Chia sẻ vào nhóm học tập"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+              </button>
+            )}
 
           {/* External Read link */}
           {doc.file_url && (
@@ -424,6 +485,15 @@ const DocumentCard = ({
           />
         </div>
       )}
+
+      {/* Modal chọn nhóm để chia sẻ tài liệu */}
+      <div onClick={(e) => e.stopPropagation()}>
+        <ShareDocToGroupModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          document={doc}
+        />
+      </div>
     </div>
   );
 };

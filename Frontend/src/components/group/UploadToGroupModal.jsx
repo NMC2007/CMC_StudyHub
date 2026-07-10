@@ -1,21 +1,15 @@
 /**
- * DocumentUploadModal.jsx
- * Modal tải lên tài liệu mới — hỗ trợ nghiệp vụ upload cho cả Sinh viên (Student) và Giảng viên (Lecturer).
+ * UploadToGroupModal.jsx
+ * Modal tải trực tiếp tài liệu mới vào Nhóm học tập (`useUploadGroupDocument`).
  *
- * Nghiệp vụ (STUDHUB_FE.md Mục 10 & 18):
- *  - Sử dụng FileDropzone để chọn file (.pdf, .docx, .pptx, .zip, ≤50MB).
- *  - Form validation bằng React Hook Form + Zod (uploadDocumentSchema).
- *  - Student Upload Guard:
- *      + Khóa/Khoa/Ngành tự động điền từ thông tin hồ sơ (Zustand store).
- *      + Chỉ cho phép chọn Môn học thuộc chuyên ngành của sinh viên.
- *  - Lecturer Upload:
- *      + Có thể tự do chọn Khóa, Khoa, Ngành và Môn học.
- *  - Khi submit, đóng gói FormData và gọi useUploadDocument mutation.
+ * Nghiệp vụ:
+ *  - Mặc định và khóa cứng phạm vi hiển thị là `GROUP` (Nhóm học tập).
+ *  - Gửi dữ liệu tới API POST `/api/v1/groups/:groupId/documents/upload`.
  */
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Upload, FileText, Globe, Lock, Users, BookOpen } from 'lucide-react';
+import { Upload, FileText, Users } from 'lucide-react';
 
 import Modal from '#/components/ui/Modal';
 import Button from '#/components/ui/Button';
@@ -24,7 +18,7 @@ import Select from '#/components/ui/Select';
 import FileDropzone from '#/components/ui/FileDropzone';
 import CascadeSelect from '#/components/academic/CascadeSelect';
 import { useAuthStore } from '#/stores/useAuthStore';
-import { useUploadDocument } from '#/hooks/useDocuments';
+import { useUploadGroupDocument } from '#/hooks/useGroups';
 import { uploadDocumentSchema } from '#/utils/validators';
 
 const DOCUMENT_TYPE_OPTIONS = [
@@ -35,15 +29,14 @@ const DOCUMENT_TYPE_OPTIONS = [
   { value: 'REFERENCE', label: 'Tài liệu tham khảo' },
 ];
 
-const VISIBILITY_OPTIONS = [
-  { value: 'PUBLIC', label: 'Công khai — Mọi người đều có thể xem' },
-  { value: 'PRIVATE', label: 'Riêng tư — Chỉ mình tôi có thể xem' },
+const GROUP_VISIBILITY_OPTION = [
+  { value: 'GROUP', label: 'Nhóm học tập — Chỉ thành viên nhóm được xem' },
 ];
 
-export default function DocumentUploadModal({
+export default function UploadToGroupModal({
   isOpen = false,
   onClose = () => {},
-  defaultVisibility = 'PUBLIC',
+  group = null,
 }) {
   const user = useAuthStore((s) => s.user);
   const isStudent = user?.role === 'STUDENT';
@@ -51,7 +44,7 @@ export default function DocumentUploadModal({
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileError, setFileError] = useState('');
 
-  const uploadMutation = useUploadDocument();
+  const uploadGroupMutation = useUploadGroupDocument(group?.id);
 
   const {
     register,
@@ -66,7 +59,7 @@ export default function DocumentUploadModal({
       title: '',
       description: '',
       document_type: 'DOCUMENT',
-      visibility: defaultVisibility,
+      visibility: 'GROUP',
       subject_id: '',
       cohort_code: '',
       cohort_id: null,
@@ -77,14 +70,13 @@ export default function DocumentUploadModal({
     },
   });
 
-  // Khi mở modal, tự động set các giá trị ban đầu và pre-fill hồ sơ học thuật cho sinh viên
   useEffect(() => {
     if (isOpen) {
       reset({
         title: '',
         description: '',
         document_type: 'DOCUMENT',
-        visibility: defaultVisibility,
+        visibility: 'GROUP',
         subject_id: '',
         cohort_code: user?.cohort_code || '',
         cohort_id: user?.cohort_id || null,
@@ -96,9 +88,10 @@ export default function DocumentUploadModal({
       setSelectedFile(null);
       setFileError('');
     }
-  }, [isOpen, defaultVisibility, user, reset]);
+  }, [isOpen, user, reset]);
 
-  // Quản lý thay đổi từ CascadeSelect
+  if (!group) return null;
+
   const cascadeValues = {
     cohort_code: watch('cohort_code'),
     cohort_id: watch('cohort_id'),
@@ -127,7 +120,6 @@ export default function DocumentUploadModal({
     setSelectedFile(file);
     if (file) {
       setFileError('');
-      // Nếu chưa nhập tiêu đề, lấy tên file làm tiêu đề mặc định (bỏ đuôi mở rộng)
       const currentTitle = watch('title');
       if (!currentTitle || currentTitle.trim() === '') {
         const titleFromName = file.name.replace(/\.[^/.]+$/, '');
@@ -149,22 +141,20 @@ export default function DocumentUploadModal({
       formData.append('description', data.description.trim());
     }
     formData.append('document_type', data.document_type);
-    formData.append('visibility', data.visibility);
+    formData.append('visibility', 'GROUP');
     formData.append('subject_id', Number(data.subject_id));
 
     if (isStudent) {
-      // Đối với sinh viên, luôn bắt buộc gửi đúng ID học thuật từ profile user
       if (user?.cohort_id) formData.append('cohort_id', user.cohort_id);
       if (user?.faculty_id) formData.append('faculty_id', user.faculty_id);
       if (user?.major_id) formData.append('major_id', user.major_id);
     } else {
-      // Đối với giảng viên hoặc admin, gửi ID từ dropdown nếu đã chọn
       if (data.cohort_id) formData.append('cohort_id', data.cohort_id);
       if (data.faculty_id) formData.append('faculty_id', data.faculty_id);
       if (data.major_id) formData.append('major_id', data.major_id);
     }
 
-    uploadMutation.mutate(formData, {
+    uploadGroupMutation.mutate(formData, {
       onSuccess: () => {
         reset();
         setSelectedFile(null);
@@ -177,7 +167,7 @@ export default function DocumentUploadModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Tải lên tài liệu mới"
+      title={`Tải tài liệu lên nhóm "${group.name}"`}
       size="lg"
       footer={
         <div className="flex items-center justify-end gap-3 w-full">
@@ -185,7 +175,7 @@ export default function DocumentUploadModal({
             type="button"
             variant="secondary"
             onClick={onClose}
-            disabled={uploadMutation.isPending}
+            disabled={uploadGroupMutation.isPending}
           >
             Hủy bỏ
           </Button>
@@ -193,9 +183,9 @@ export default function DocumentUploadModal({
             type="button"
             icon={Upload}
             onClick={handleSubmit(onSubmit)}
-            loading={uploadMutation.isPending}
+            loading={uploadGroupMutation.isPending}
           >
-            Tải lên tài liệu
+            Tải lên vào nhóm
           </Button>
         </div>
       }
@@ -209,7 +199,7 @@ export default function DocumentUploadModal({
             selectedFile={selectedFile}
             onFileSelect={handleFileSelect}
             error={fileError}
-            disabled={uploadMutation.isPending}
+            disabled={uploadGroupMutation.isPending}
           />
         </div>
 
@@ -220,7 +210,7 @@ export default function DocumentUploadModal({
           icon={FileText}
           required
           error={errors.title}
-          disabled={uploadMutation.isPending}
+          disabled={uploadGroupMutation.isPending}
           {...register('title')}
         />
 
@@ -230,9 +220,9 @@ export default function DocumentUploadModal({
             Mô tả tài liệu
           </label>
           <textarea
-            placeholder="Ghi chú thêm về tài liệu (VD: Chương 1-3 môn Java, tài liệu ôn thi cuối kỳ...)"
+            placeholder="Ghi chú thêm về tài liệu trong nhóm..."
             rows={3}
-            disabled={uploadMutation.isPending}
+            disabled={uploadGroupMutation.isPending}
             {...register('description')}
             className={`w-full px-3.5 py-2.5 text-sm rounded-xl border transition-all outline-none resize-none ${
               errors.description
@@ -247,26 +237,24 @@ export default function DocumentUploadModal({
           )}
         </div>
 
-        {/* 4. 2 cột: Loại tài liệu & Quyền hiển thị */}
+        {/* 4. 2 cột: Loại tài liệu & Quyền hiển thị (Mặc định khóa GROUP) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <Select
             label="Loại tài liệu"
             options={DOCUMENT_TYPE_OPTIONS}
             required
             error={errors.document_type}
-            disabled={uploadMutation.isPending}
+            disabled={uploadGroupMutation.isPending}
             value={watch('document_type')}
             onChange={(e) => setValue('document_type', e.target.value)}
           />
 
           <Select
-            label="Phạm vi hiển thị"
-            options={VISIBILITY_OPTIONS}
+            label="Phạm vi hiển thị (Mặc định Nhóm)"
+            options={GROUP_VISIBILITY_OPTION}
             required
-            error={errors.visibility}
-            disabled={uploadMutation.isPending}
-            value={watch('visibility')}
-            onChange={(e) => setValue('visibility', e.target.value)}
+            disabled={true}
+            value="GROUP"
           />
         </div>
 
@@ -292,7 +280,7 @@ export default function DocumentUploadModal({
               major_code: errors.major_id ? errors.major_id.message : '',
             }}
             required={{ subject: true }}
-            disabled={uploadMutation.isPending}
+            disabled={uploadGroupMutation.isPending}
             showTitle={true}
             titleText="Phân loại học thuật & Môn học (*)"
           />

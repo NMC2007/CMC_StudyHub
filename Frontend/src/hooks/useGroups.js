@@ -13,6 +13,7 @@ import {
   disbandGroup,
   shareDocumentToGroup,
   getGroupDocuments,
+  uploadGroupDocument,
 } from '#/api/groupApi';
 
 // ─── QUERIES ──────────────────────────────────────────────────────────────────
@@ -99,16 +100,45 @@ export const useDisbandGroup = () => {
   });
 };
 
-export const useShareDocumentToGroup = (groupId) => {
+export const useShareDocumentToGroup = (groupId = null) => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body) => shareDocumentToGroup(groupId, body),
-    onSuccess: () => {
+    mutationFn: ({ groupId: targetGroupId, document_id, ...rest }) => {
+      const idToUse = targetGroupId || groupId;
+      return shareDocumentToGroup(idToUse, { document_id, ...rest });
+    },
+    onSuccess: (_, variables) => {
+      const idToUse = variables?.groupId || groupId;
       toast.success('Đã chia sẻ tài liệu vào nhóm!');
-      qc.invalidateQueries({ queryKey: ['groups', 'documents', groupId] });
+      if (idToUse) {
+        qc.invalidateQueries({ queryKey: ['groups', 'documents', String(idToUse)] });
+        qc.invalidateQueries({ queryKey: ['groups', 'documents', Number(idToUse)] });
+      }
+      qc.invalidateQueries({ queryKey: ['groups', 'documents'] });
+      qc.invalidateQueries({ queryKey: ['groups', 'detail'] });
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || 'Chia sẻ tài liệu thất bại.');
+    },
+  });
+};
+
+export const useUploadGroupDocument = (groupId) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (formData) => uploadGroupDocument(groupId, formData),
+    onSuccess: () => {
+      toast.success('Đã tải tài liệu lên nhóm thành công!');
+      if (groupId) {
+        qc.invalidateQueries({ queryKey: ['groups', 'documents', String(groupId)] });
+        qc.invalidateQueries({ queryKey: ['groups', 'documents', Number(groupId)] });
+      }
+      qc.invalidateQueries({ queryKey: ['groups', 'documents'] });
+      qc.invalidateQueries({ queryKey: ['groups', 'detail'] });
+      qc.invalidateQueries({ queryKey: ['documents'] });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Tải tài liệu lên nhóm thất bại.');
     },
   });
 };

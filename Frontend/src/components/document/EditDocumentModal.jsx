@@ -26,7 +26,6 @@ const DOCUMENT_TYPE_OPTIONS = [
 const VISIBILITY_OPTIONS = [
   { value: 'PUBLIC', label: 'Công khai — Mọi người đều có thể xem' },
   { value: 'PRIVATE', label: 'Riêng tư — Chỉ mình tôi có thể xem' },
-  { value: 'GROUP', label: 'Nhóm học tập — Chỉ thành viên nhóm được xem' },
 ];
 
 export default function EditDocumentModal({
