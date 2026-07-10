@@ -23,6 +23,7 @@ Hệ thống sử dụng các khóa chính là số nguyên tự tăng (`SERIAL`
 ### 2.1. Các Enum định nghĩa sẵn (Database Enums)
 
 - `USER_ROLE`: `('ADMIN', 'LECTURER', 'STUDENT')`
+- `USER_STATUS`: `('ACTIVE', 'INACTIVE', 'BANNED')`
 - `DOC_VISIBILITY`: `('PUBLIC', 'GROUP', 'PRIVATE')`
 
 ### 2.2. Danh sách các bảng chi tiết
@@ -37,6 +38,7 @@ Hệ thống sử dụng các khóa chính là số nguyên tự tăng (`SERIAL`
 - `dob` (DATE, NULL)
 - `password_hash` (VARCHAR(255), NOT NULL)
 - `role` (USER_ROLE, NOT NULL)
+- `status` (USER_STATUS, DEFAULT 'ACTIVE', NOT NULL) -- Trạng thái tài khoản: ACTIVE, INACTIVE, BANNED
 - `avatar` (VARCHAR(255), NULL) -- Lưu trữ đường dẫn tệp cục bộ (VD: /public/avatars/abc.png)
 - `cohort_id` (INT, FOREIGN KEY -> cohorts.id, NULL) -- Chỉ bắt buộc với Student
 - `faculty_id` (INT, FOREIGN KEY -> faculties.id, NULL)
@@ -217,6 +219,8 @@ Tách biệt thành hai cấu hình Middleware chuyên biệt:
 
 - `GET / POST / PUT / DELETE /api/v1/academic/*`: Các API CRUD cho Cohorts, Faculties, Majors, Subjects.
 - `GET /api/v1/admin/stats`: Lấy các chỉ số thống kê tổng quan hệ thống (`total_users`, `total_documents`, `total_groups`, `total_views`).
+- `GET /api/v1/admin/system/health`: Lấy thông số giám sát sức khỏe hệ thống (Trạng thái DB, RAM, CPU load, Uptime).
+- `PATCH /api/v1/admin/users/:id/status`: Khóa (`BANNED`), vô hiệu hóa (`INACTIVE`) hoặc kích hoạt (`ACTIVE`) tài khoản bởi Admin. Tự động thu hồi toàn bộ Refresh Token nếu khóa/vô hiệu hóa.
 - `POST /api/v1/admin/cron/trigger/trash-cleanup`: API kích hoạt thủ công tác vụ dọn rác.
 - `POST /api/v1/admin/cron/trigger/token-cleanup`: API kích hoạt thủ công dọn token hết hạn.
 

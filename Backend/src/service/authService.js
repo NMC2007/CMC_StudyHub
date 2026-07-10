@@ -207,6 +207,24 @@ export const login = async (body) => {
         };
     }
 
+    if (user.status === "BANNED") {
+        return {
+            statusCode: 403,
+            message: "Tài khoản đã bị khóa",
+            data: null,
+            errors: ["Tài khoản của bạn đã bị khóa."],
+        };
+    }
+
+    if (user.status === "INACTIVE") {
+        return {
+            statusCode: 403,
+            message: "Tài khoản đang tạm ngừng hoạt động",
+            data: null,
+            errors: ["Tài khoản của bạn đang tạm ngừng hoạt động."],
+        };
+    }
+
     // Bước 3: So sánh mật khẩu bằng bcrypt
     const isPasswordMatch = await bcrypt.compare(body.password, user.password_hash);
     if (!isPasswordMatch) {
@@ -321,6 +339,26 @@ export const refreshAccessToken = async (token) => {
             message: "Người dùng không tồn tại.",
             data: null,
             errors: ["Tài khoản đã bị xóa hoặc vô hiệu hóa."],
+        };
+    }
+
+    if (user.status === "BANNED") {
+        await deleteRefreshToken(token);
+        return {
+            statusCode: 403,
+            message: "Tài khoản đã bị khóa",
+            data: null,
+            errors: ["Tài khoản của bạn đã bị khóa."],
+        };
+    }
+
+    if (user.status === "INACTIVE") {
+        await deleteRefreshToken(token);
+        return {
+            statusCode: 403,
+            message: "Tài khoản đang tạm ngừng hoạt động",
+            data: null,
+            errors: ["Tài khoản của bạn đang tạm ngừng hoạt động."],
         };
     }
 

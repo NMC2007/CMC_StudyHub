@@ -9,6 +9,7 @@ CREATE EXTENSION IF NOT EXISTS unaccent;
 -- 1. TẠO CÁC ENUM TYPE
 -- ==========================================
 CREATE TYPE user_role AS ENUM ('ADMIN', 'LECTURER', 'STUDENT');
+CREATE TYPE user_status AS ENUM ('ACTIVE', 'INACTIVE', 'BANNED');
 CREATE TYPE doc_visibility AS ENUM ('PUBLIC', 'GROUP', 'PRIVATE');
 
 -- ==========================================
@@ -70,6 +71,7 @@ CREATE TABLE users (
                        dob DATE,
                        password_hash VARCHAR(255) NOT NULL,
                        role user_role NOT NULL,
+                       status user_status NOT NULL DEFAULT 'ACTIVE',
                        avatar VARCHAR(255),
                        cohort_id INT REFERENCES cohorts(id) ON DELETE SET NULL,
                        faculty_id INT REFERENCES faculties(id) ON DELETE SET NULL,
@@ -221,13 +223,14 @@ ON CONFLICT (code) DO NOTHING;
 -- -- SEED DATA: ADMIN USER
 -- -- ==========================================
 -- -- Mật khẩu: Admin@121234 (đã hash qua bcrypt 10 salt rounds)
--- INSERT INTO users (full_name, username, email, dob, password_hash, role)
+-- INSERT INTO users (full_name, username, email, dob, password_hash, role, status)
 -- VALUES (
 --     'Nguyễn Mạnh Cường',
 --     'nmcDev',
 --     'manhcuong281207@gmail.com',
 --     '2007-12-28',
 --     '$2b$10$tJz8p7P5Kj7t0g1O.6O/3u3Rk8K3S/3iA.s0A/3u3Rk8K3S/3iA.s',
---     'ADMIN'
+--     'ADMIN',
+--     'ACTIVE'
 -- )
 -- ON CONFLICT (username) DO NOTHING;

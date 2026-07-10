@@ -23,6 +23,7 @@ export const toUserResponse = (userEntity) => {
         phone: userEntity.phone || null,
         dob: userEntity.dob || null,
         role: userEntity.role,
+        status: userEntity.status || "ACTIVE",
         avatar: userEntity.avatar || null,
         cohort_id: userEntity.cohort?.id || null,
         cohort_code: userEntity.cohort?.code || null,

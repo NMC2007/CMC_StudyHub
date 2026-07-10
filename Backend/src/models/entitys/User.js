@@ -72,6 +72,14 @@ export const User = new EntitySchema({
             enumName: "user_role",
             nullable: false,
         },
+        // === Trạng thái tài khoản: ACTIVE | INACTIVE | BANNED (PostgreSQL ENUM) ===
+        status: {
+            type: "enum",
+            enum: ["ACTIVE", "INACTIVE", "BANNED"],
+            enumName: "user_status",
+            default: "ACTIVE",
+            nullable: false,
+        },
         // === Đường dẫn ảnh đại diện (VD: /public/avatars/abc.png) ===
         avatar: {
             type: "varchar",

@@ -14,6 +14,7 @@ import {
 } from "#repository/userRepository.js";
 import { validateUpdateProfileRequest } from "#models/dto/request/UpdateProfileRequestDTO.js";
 import { toUserResponse } from "#models/dto/response/UserResponseDTO.js";
+import { deleteRefreshTokensByUserId } from "#repository/authRepository.js";
 
 /**
  * Lấy thông tin chi tiết của người dùng hiện tại.
@@ -196,6 +197,51 @@ export const getAllUsers = async (queryParams = {}) => {
                 totalPages: result.totalPages,
             },
         },
+        errors: null,
+    };
+};
+
+/**
+ * Cập nhật trạng thái (status) của người dùng bởi Admin.
+ * Nếu chuyển sang BANNED hoặc INACTIVE, tự động thu hồi toàn bộ Refresh Token của user.
+ * @param {number} userId - ID của user cần cập nhật
+ * @param {string} status - Trạng thái mới: ACTIVE | INACTIVE | BANNED
+ * @returns {Promise<{ statusCode: number, message: string, data: Object|null, errors: string[]|null }>}
+ */
+export const updateUserStatus = async (userId, status) => {
+    const validStatuses = ["ACTIVE", "INACTIVE", "BANNED"];
+    const normalizedStatus = String(status).trim().toUpperCase();
+
+    if (!validStatuses.includes(normalizedStatus)) {
+        return {
+            statusCode: 400,
+            message: "Trạng thái tài khoản không hợp lệ (Chỉ nhận ACTIVE, INACTIVE, BANNED).",
+            data: null,
+            errors: ["Invalid Status Value"],
+        };
+    }
+
+    const targetUser = await findUserProfileById(userId);
+    if (!targetUser) {
+        return {
+            statusCode: 404,
+            message: "Người dùng không tồn tại.",
+            data: null,
+            errors: ["User Not Found"],
+        };
+    }
+
+    const updatedUser = await updateUserById(userId, { status: normalizedStatus });
+
+    // Nếu khóa hoặc tạm ngưng, thu hồi ngay tất cả Refresh Token của user đó
+    if (normalizedStatus === "BANNED" || normalizedStatus === "INACTIVE") {
+        await deleteRefreshTokensByUserId(userId);
+    }
+
+    return {
+        statusCode: 200,
+        message: `Cập nhật trạng thái tài khoản sang '${normalizedStatus}' thành công!`,
+        data: toUserResponse(updatedUser),
         errors: null,
     };
 };
