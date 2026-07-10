@@ -24,17 +24,27 @@ export const useAuthStore = create((set) => ({
   // ── Actions ────────────────────────────────────────────
 
   /**
-   * setCredentials — Gọi sau khi login thành công hoặc sau khi refresh token.
-   * @param {Object|null} user - Object user từ backend. Truyền null khi chỉ refresh token.
+   * setAccessToken — Gọi khi vừa refresh token thành công mà chưa có profile,
+   * hoặc dùng khi retry request để chỉ cập nhật token trong bộ nhớ mà không đổi isAuthenticated/role.
+   * @param {string} accessToken
+   */
+  setAccessToken: (accessToken) => set({ accessToken }),
+
+  /**
+   * setCredentials — Gọi sau khi login thành công hoặc sau khi refresh token có kèm/đã tải profile.
+   * @param {Object|null} user - Object user từ backend. Truyền null khi chỉ refresh token (nếu user cũ đã có trong state).
    * @param {string} accessToken - JWT access token mới.
    */
   setCredentials: (user, accessToken) =>
-    set((state) => ({
-      user: user ?? state.user, // Giữ nguyên user hiện tại nếu user truyền vào là null
-      accessToken,
-      isAuthenticated: true,
-      role: user?.role ?? state.role, // Lấy role từ user mới hoặc giữ role cũ
-    })),
+    set((state) => {
+      const nextUser = user ?? state.user;
+      return {
+        user: nextUser,
+        accessToken,
+        isAuthenticated: Boolean(nextUser), // Chỉ xác nhận đăng nhập thành công khi đã có profile user
+        role: nextUser?.role ?? state.role,
+      };
+    }),
 
   /**
    * clearCredentials — Gọi khi logout hoặc refresh token thất bại.

@@ -18,6 +18,7 @@ const Button = ({
   variant = 'primary',
   size = 'md',
   loading = false,
+  isLoading = false,
   disabled = false,
   icon: Icon = null,
   className = '',
@@ -27,6 +28,8 @@ const Button = ({
 }) => {
   // Lấy role hiện tại từ Zustand để áp dụng Dynamic Color Theming cho variant="primary"
   const role = useAuthStore((state) => state.role);
+
+  const isBtnLoading = loading || isLoading;
 
   // 1. Base styles chung cho mọi nút
   const baseStyles =
@@ -69,12 +72,12 @@ const Button = ({
     <button
       type={type}
       className={combinedClassName}
-      disabled={disabled || loading}
+      disabled={disabled || isBtnLoading}
       onClick={onClick}
       {...restProps}
     >
       {/* Khi loading thì hiện Loader2 xoay, nếu không thì hiện Icon nếu có */}
-      {loading ? (
+      {isBtnLoading ? (
         <Loader2 className="w-4 h-4 animate-spin shrink-0" aria-hidden="true" />
       ) : Icon ? (
         typeof Icon === 'function' || typeof Icon === 'object' ? (

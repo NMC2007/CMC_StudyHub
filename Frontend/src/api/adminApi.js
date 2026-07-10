@@ -26,3 +26,19 @@ export const triggerTokenCleanup = () =>
  */
 export const getSystemStats = () =>
   api.get('/admin/stats');
+
+/**
+ * Lấy thông số giám sát sức khỏe hệ thống (Trạng thái DB, RAM, CPU Load, Uptime).
+ * @returns Promise — data.data: { status, database, memory, cpu_load, uptime_seconds }
+ */
+export const getSystemHealth = () =>
+  api.get('/admin/system/health');
+
+/**
+ * Cập nhật trạng thái người dùng (Chỉ Admin).
+ * @param {number|string} userId - ID của người dùng
+ * @param {{ status: 'ACTIVE' | 'INACTIVE' | 'BANNED' }} body - Trạng thái mới
+ * @returns Promise — data.data: User object đã cập nhật
+ */
+export const updateUserStatus = (userId, body) =>
+  api.patch(`/admin/users/${userId}/status`, body);

@@ -42,6 +42,11 @@ const GroupsPage = React.lazy(() => import('#/pages/shared/GroupsPage'));
 const GroupDetailPage = React.lazy(() => import('#/pages/shared/GroupDetailPage'));
 const ProfilePage = React.lazy(() => import('#/pages/shared/ProfilePage'));
 
+// ── Phase 6 Admin Pages (Lazy Loaded) ──
+const UsersPage = React.lazy(() => import('#/pages/admin/UsersPage'));
+const AcademicPage = React.lazy(() => import('#/pages/admin/AcademicPage'));
+const CronPage = React.lazy(() => import('#/pages/admin/CronPage'));
+
 // ─── Loader: Chặn user đã đăng nhập truy cập Login/Register ──────────────────
 // Nếu đã authenticated → redirect về "/" thay vì hiển thị trang Login/Register.
 const redirectIfAuth = () => {
@@ -96,10 +101,9 @@ const router = createBrowserRouter([
             element: <RbacRoute allowedRoles={['ADMIN']} />,
             children: [
               { path: '/admin/dashboard', element: <AdminDashboard /> },
-              // Các route admin sẽ được bổ sung ở Phase 6:
-              // { path: '/admin/users',    element: <UsersPage /> },
-              // { path: '/admin/academic', element: <AcademicPage /> },
-              // { path: '/admin/cron',     element: <CronPage /> },
+              { path: '/admin/users', element: <UsersPage /> },
+              { path: '/admin/academic', element: <AcademicPage /> },
+              { path: '/admin/cron', element: <CronPage /> },
             ],
           },
         ],

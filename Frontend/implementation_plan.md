@@ -260,6 +260,47 @@ Tạo các file API (hàm gọi axios thuần):
 
 ---
 
+## Phase 6.5 — Bug Fixing & Admin Panel Stabilization (Kế hoạch Sửa Lỗi & Tối Ưu)
+
+> **Mục tiêu:** Giải quyết triệt để 3 lỗi phát sinh sau khi triển khai Phase 6 theo yêu cầu rà soát của User trước khi tiến hành sửa đổi mã nguồn.
+
+### 1. Lỗi cảnh báo DOM Attribute `isLoading` trên Component Button
+- **Chi tiết lỗi:** `Button.jsx:69 React does not recognize the isLoading prop on a DOM element...`
+- **Phân tích nguyên nhân:**
+  - Component `Button.jsx` (được định nghĩa trong `src/components/ui/Button.jsx`) nhận prop tên là `loading` (`loading = false`).
+  - Khi triển khai các trang Admin (`AdminDashboard.jsx`, `CronPage.jsx`, `UserStatusModal.jsx`, `AcademicFormModal.jsx`), ta đã truyền nhầm prop `isLoading={...}` thay vì `loading={...}` vào thẻ `<Button>`.
+  - Do `Button.jsx` dùng cơ chế spread (`...restProps`) để truyền các thuộc tính còn lại vào thẻ DOM `<button type={type} className={...} disabled={...} {...restProps}>`, prop `isLoading` bị truyền thẳng xuống native HTML button element, gây ra cảnh báo React DOM cảnh báo lỗi nhận diện thuộc tính. Đồng thời, nút cũng không hiển thị icon loading xoay vì prop `loading` bị `undefined`.
+- **Giải pháp đề xuất:**
+  - **Sửa `Button.jsx`:** Nâng cấp component để chấp nhận cả 2 tên prop (`loading` và `isLoading`), tính toán `const isBtnLoading = loading || isLoading;`, và tách riêng `isLoading` ra khỏi `...restProps` trước khi truyền vào thẻ DOM.
+  - **Đồng bộ hóa các component Admin:** Cập nhật lại các file `AdminDashboard.jsx`, `CronPage.jsx`, `UserStatusModal.jsx`, `AcademicFormModal.jsx` từ `isLoading={...}` sang `loading={...}` cho nhất quán với quy chuẩn của design system.
+
+### 2. Trang Học thuật (`/admin/academic`) không lấy được dữ liệu từ Database
+- **Phân tích nguyên nhân (Khảo sát đối chiếu Frontend vs Backend API):**
+  - **a. Sai đường dẫn API lấy Ngành và Môn học:** Trong `useAdmin.js`, hook `useAdminMajors(facultyId)` và `useAdminSubjects(majorId)` đang gọi API `/academic/faculties/${facultyId}/majors` và `/academic/majors/${majorId}/subjects`. Tuy nhiên, kiểm tra `academicRouters.js` ở Backend cho thấy các endpoint này **không tồn tại** (trả về `404 Not Found`). Backend chỉ cung cấp endpoint GET chung có lọc theo query parameter: `/api/v1/academic/majors?faculty_code=...` và `/api/v1/academic/subjects?major_code=...`.
+  - **b. Cấu trúc mảng trả về (`res.data.data`) vs cách parse dữ liệu:** API chuẩn của Backend (`toAPIResponse`) trả về `res.data.data` là một **Mảng trực tiếp** (ví dụ: `[{ id: 1, code: "CNTT", name: "Công nghệ thông tin"... }]`). Nhưng trong `useAdmin.js` lại parse theo kiểu `res.data?.data?.cohorts || []`, `res.data?.data?.faculties || []`, `res.data?.data?.majors || []`, `res.data?.data?.subjects || []`. Do `res.data.data` là `Array` nên việc gọi `.cohorts`/`.faculties`/`.majors`/`.subjects` trả về `undefined` và fallback về mảng rỗng `[]`.
+  - **c. Trường định danh (`code` vs `*_code` / `*_id`):** DTO Backend (`AcademicResponseDTO.js`) trả về trường mã định danh của thực thể là `code` (ví dụ `item.code` cho Cohort, Faculty, Major, Subject). Nhưng trang `AcademicPage.jsx` lại render bằng `item.cohort_code`, `item.faculty_code`, `item.major_code`, `item.subject_code`. Thêm vào đó, khi gửi request tạo mới Ngành học (`createMajor`), Backend yêu cầu `faculty_code` (mã khoa cha), và khi tạo Môn học (`createSubject`) yêu cầu `major_codes` (mảng mã ngành cha).
+- **Giải pháp đề xuất:**
+  - **Sửa `useAdmin.js`:** Cập nhật các hook `useAdminCohorts`, `useAdminFaculties`, `useAdminMajors`, `useAdminSubjects` để xử lý chuẩn xác mảng `res.data?.data` (kiểm tra `Array.isArray(res.data?.data) ? res.data.data : ...`). Sử dụng `getMajorsByFaculty(facultyCode)` và `getSubjectsByMajor(majorCode)` đúng theo API Backend.
+  - **Sửa `AcademicPage.jsx`, `AcademicTreeWidget.jsx`, `AcademicFormModal.jsx`:** Truy xuất đúng thuộc tính `item.code` khi hiển thị bảng/form và truyền đúng `faculty_code` / `major_codes` khi gửi yêu cầu `POST/PUT` lên máy chủ.
+
+### 3. Lỗi Toast "Bạn không có quyền truy cập trang này" mỗi khi Admin reload trang
+- **Phân tích nguyên nhân (Race Condition trong Session Restoration flow):**
+  - Khi Admin bấm F5 (Reload) tại các trang `/admin/...`, cờ `isRestoring` trong `App.jsx` được bật (`true`), màn hình hiển thị spinner khôi phục phiên làm việc.
+  - Hàm `restoreSession()` trong `App.jsx` gọi API `POST /auth/refresh` bằng `refreshToken`. API này trả về `accessToken` và `refreshToken` mới, nhưng **không trả về object `user`**.
+  - Tại bước 1 của `restoreSession`, code chạy: `setCredentials(user || null, newAccessToken)`. Do `user` là `undefined`/`null`, lệnh `setCredentials(null, newAccessToken)` trong `useAuthStore.js` chuyển `isAuthenticated = true` nhưng **`role` vẫn là `null`**.
+  - Vì `useEffect` của `App.jsx` có dependency `[isAuthenticated, ...]`, ngay khi `isAuthenticated` chuyển sang `true`, hook `useEffect` bị kích hoạt lần thứ 2 trong lúc API `getProfile()` vẫn đang chạy ở background.
+  - Ở lần chạy thứ 2, kiểm tra `if (isAuthenticated)` là `true`, `restoreSession()` lập tức hạ cờ `setIsRestoring(false)` và thoát sớm trước khi `getProfile()` kịp trả về profile của Admin.
+  - Khi `isRestoring = false`, `<RouterProvider />` được mount. Component guard `<ProtectedRoute />` kiểm tra `isAuthenticated = true` nên cho qua. Tiếp đó, `<RbacRoute allowedRoles={['ADMIN']} />` kiểm tra `role` từ store → lúc này `role` vẫn là `null`!
+  - `RbacRoute` đánh giá `!allowedRoles.includes(null)` là `true`, lập tức bắn Toast thông báo `"Bạn không có quyền truy cập trang này."` và điều hướng (`Navigate`) Admin về trang chủ `/` (chỉ 50ms sau đó `getProfile()` mới xong và gán `role = 'ADMIN'`, nhưng lúc này Admin đã bị đá ra ngoài).
+- **Giải pháp đề xuất:**
+  - **Tách biệt cập nhật Token và Authentication State trong `useAuthStore.js`:** Bổ sung action `setAccessToken: (token) => set({ accessToken: token })`.
+  - **Chỉnh sửa luồng khôi phục phiên trong `App.jsx` (`restoreSession`):**
+    - Khi nhận `newAccessToken` từ `/auth/refresh`, chỉ gọi `setAccessToken(newAccessToken)` (và lưu `refreshToken` mới vào `localStorage`) để `axiosInstance` có token xác thực, nhưng **không** gán `isAuthenticated = true` ngay.
+    - Chờ API `getProfile()` tải hoàn tất object `user` đầy đủ (chứa `role: 'ADMIN'`), sau đó mới gọi một lần duy nhất: `setCredentials(user, newAccessToken)`.
+    - Điều chỉnh điều kiện kiểm tra thoát sớm ban đầu: chỉ thoát sớm khi `isAuthenticated && useAuthStore.getState().user` (đảm bảo đã có đầy đủ thông tin vai trò `role` trước khi cho phép mount `Router`).
+
+---
+
 ## Phase 7 — Polish & Optimization
 
 > **Lý do làm cuối:** Tối ưu hóa hiệu năng, kiểm thử giao diện và chuẩn bị build production khi toàn bộ nghiệp vụ đã hoạt động trơn tru.

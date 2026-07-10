@@ -28,7 +28,7 @@ export default function App() {
       const refreshToken = localStorage.getItem("refreshToken");
 
       // Nếu đã login trong bộ nhớ hoặc không có refreshToken -> không cần khôi phục
-      if (isAuthenticated || !refreshToken) {
+      if (useAuthStore.getState().isAuthenticated || !refreshToken) {
         setIsRestoring(false);
         return;
       }
@@ -46,11 +46,11 @@ export default function App() {
               data.data;
             let user = data.data.user;
 
-            // Lưu tạm accessToken và cập nhật refreshToken mới vào localStorage
-            setCredentials(user || null, newAccessToken);
+            // Cập nhật accessToken vào memory store và refreshToken vào localStorage trước khi tải profile
+            useAuthStore.getState().setAccessToken(newAccessToken);
             localStorage.setItem("refreshToken", newRefreshToken);
 
-            // 2. Nếu API refresh không trả về user profile, gọi API getProfile
+            // 2. Nếu API refresh không trả về user profile, gọi API getProfile (dùng token mới trong memory)
             if (!user) {
               try {
                 const profileRes = await getProfile();
@@ -60,9 +60,12 @@ export default function App() {
               }
             }
 
-            // 3. Cập nhật đầy đủ user và token vào store
+            // 3. Cập nhật đầy đủ user và token vào store (xác nhận isAuthenticated = true và set role)
             if (user) {
               setCredentials(user, newAccessToken);
+            } else {
+              clearCredentials();
+              localStorage.removeItem("refreshToken");
             }
             return true;
           } catch (error) {
@@ -87,7 +90,7 @@ export default function App() {
     };
 
     restoreSession();
-  }, [isAuthenticated, setCredentials, clearCredentials]);
+  }, []);
 
   // Hiển thị màn hình chờ trong lúc khôi phục session để tránh nhấp nháy giao diện (flicker/redirect)
   if (isRestoring) {

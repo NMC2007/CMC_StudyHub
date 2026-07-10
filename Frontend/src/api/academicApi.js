@@ -75,8 +75,10 @@ export const deleteFaculty = (id) =>
 
 // ─── ADMIN — MAJORS ───────────────────────────────────────────────────────────
 
-export const getMajorsByFacultyAdmin = (facultyId) =>
-  api.get(`/academic/faculties/${facultyId}/majors`);
+export const getMajorsByFacultyAdmin = (facultyCode) =>
+  api.get('/academic/majors', {
+    params: facultyCode ? { faculty_code: facultyCode } : {},
+  });
 
 export const createMajor = (body) =>
   api.post('/academic/majors', body);
@@ -89,8 +91,10 @@ export const deleteMajor = (id) =>
 
 // ─── ADMIN — SUBJECTS ─────────────────────────────────────────────────────────
 
-export const getSubjectsByMajorAdmin = (majorId) =>
-  api.get(`/academic/majors/${majorId}/subjects`);
+export const getSubjectsByMajorAdmin = (majorCode) =>
+  api.get('/academic/subjects', {
+    params: majorCode ? { major_code: majorCode } : {},
+  });
 
 export const createSubject = (body) =>
   api.post('/academic/subjects', body);

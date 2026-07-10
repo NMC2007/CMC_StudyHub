@@ -19,12 +19,13 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useLocation } from "react-router";
-import { BookOpen, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { BookOpen, Mail, Lock, Eye, EyeOff, ShieldAlert } from "lucide-react";
 
 import { loginSchema } from "#/utils/validators";
 import { useLogin } from "#/hooks/useAuth";
 import Input from "#/components/ui/Input";
 import Button from "#/components/ui/Button";
+import Modal from "#/components/ui/Modal";
 
 export default function LoginPage() {
   const location = useLocation();
@@ -53,6 +54,41 @@ export default function LoginPage() {
       setValue("identifier", prefillIdentifier);
     }
   }, [prefillIdentifier, setValue]);
+
+  const [statusAlertModal, setStatusAlertModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+  });
+
+  // Kiểm tra lỗi 403 (Tài khoản bị khóa hoặc tạm ngừng hoạt động) để hiển thị Modal
+  useEffect(() => {
+    if (loginMutation.isError) {
+      const status = loginMutation.error?.response?.status;
+      const msg = loginMutation.error?.response?.data?.message;
+      const errorsList = loginMutation.error?.response?.data?.errors || [];
+
+      if (
+        status === 403 ||
+        msg === "Tài khoản đã bị khóa" ||
+        msg === "Tài khoản đang tạm ngừng hoạt động"
+      ) {
+        setStatusAlertModal({
+          isOpen: true,
+          title: "Không thể truy cập hệ thống",
+          message:
+            msg ||
+            errorsList[0] ||
+            "Tài khoản của bạn hiện không được phép hoạt động trên hệ thống.",
+        });
+      }
+    }
+  }, [loginMutation.isError, loginMutation.error]);
+
+  const handleCloseStatusModal = () => {
+    setStatusAlertModal({ isOpen: false, title: "", message: "" });
+    loginMutation.reset();
+  };
 
   const onSubmit = (data) => {
     loginMutation.mutate(data);
@@ -126,14 +162,17 @@ export default function LoginPage() {
             />
 
             {/* Server-side error */}
-            {loginMutation.isError && (
-              <div className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2 border border-red-200">
-                {[400, 401, 404].includes(loginMutation.error?.response?.status)
-                  ? "Tài khoản hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại."
-                  : loginMutation.error?.response?.data?.message ||
-                    "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin."}
-              </div>
-            )}
+            {loginMutation.isError &&
+              loginMutation.error?.response?.status !== 403 && (
+                <div className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2 border border-red-200">
+                  {[400, 401, 404].includes(
+                    loginMutation.error?.response?.status,
+                  )
+                    ? "Tài khoản hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại."
+                    : loginMutation.error?.response?.data?.message ||
+                      "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin."}
+                </div>
+              )}
 
             {/* Submit */}
             <Button
@@ -172,6 +211,38 @@ export default function LoginPage() {
           © 2026 StudyHub — CMC University
         </p>
       </div>
+
+      {/* Modal thông báo khi tài khoản bị khóa hoặc tạm ngưng */}
+      <Modal
+        isOpen={statusAlertModal.isOpen}
+        onClose={handleCloseStatusModal}
+        title={statusAlertModal.title}
+        icon={ShieldAlert}
+        size="sm"
+        closeOnBackdrop={true}
+        footer={
+          <Button
+            type="button"
+            variant="primary"
+            onClick={handleCloseStatusModal}
+            className="w-full sm:w-auto min-w-[120px] bg-red-600 hover:bg-red-700 text-white border-transparent"
+          >
+            Đã hiểu
+          </Button>
+        }
+      >
+        <div className="flex flex-col gap-3.5 py-1">
+          <div className="p-3.5 bg-red-50 border border-red-200/80 rounded-xl text-red-700 font-semibold text-sm flex items-start gap-3 shadow-2xs">
+            <ShieldAlert className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+            <span className="leading-snug">{statusAlertModal.message}</span>
+          </div>
+          <p className="text-sm text-text-secondary leading-relaxed">
+            Vui lòng liên hệ trực tiếp với Quản trị viên (Admin) hoặc phòng Công
+            tác Sinh viên của Nhà trường để được kiểm tra lý do và hỗ trợ giải
+            quyết vấn đề về tài khoản của bạn.
+          </p>
+        </div>
+      </Modal>
     </div>
   );
 }
