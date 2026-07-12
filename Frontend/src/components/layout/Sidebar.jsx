@@ -48,6 +48,7 @@ const ADMIN_MENU = [
   { to: "/search", icon: Search, label: "Tìm kiếm" },
   { to: "/favorites", icon: Heart, label: "Yêu thích" },
   { to: "/groups", icon: Users, label: "Nhóm học tập" },
+  { to: "/profile", icon: User, label: "Thông tin tài khoản" },
   { to: "/admin/users", icon: UserCog, label: "Quản lý Users" },
   { to: "/admin/academic", icon: GraduationCap, label: "Học thuật" },
   { to: "/admin/cron", icon: Clock, label: "Cron Jobs" },
@@ -87,19 +88,11 @@ const getRoleThemeClasses = (role) => {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function Sidebar({ isOpen, onClose }) {
-  const user = useAuthStore((s) => s.user);
   const role = useAuthStore((s) => s.role);
-  const logoutMutation = useLogout();
   const location = useLocation();
 
   const menuItems = role === "ADMIN" ? ADMIN_MENU : SHARED_MENU;
   const theme = getRoleThemeClasses(role);
-
-  const handleLogout = () => {
-    logoutMutation.mutate();
-  };
-
-  const avatarUrl = getAvatarUrl(user?.avatar || user?.avatar_url);
 
   return (
     <>
@@ -164,53 +157,11 @@ export default function Sidebar({ isOpen, onClose }) {
                     <item.icon className="w-[18px] h-[18px] shrink-0" />
                     <span>{item.label}</span>
                   </NavLink>
-                </li>
+                 </li>
               );
             })}
           </ul>
         </nav>
-
-        {/* ── User Info & Logout ── */}
-        <div className="border-t border-border px-4 py-4">
-          {/* User card */}
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center shrink-0 overflow-hidden relative">
-              {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt={user?.full_name || "Avatar"}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.style.display = "none";
-                    if (e.target.nextSibling)
-                      e.target.nextSibling.style.display = "block";
-                  }}
-                />
-              ) : null}
-              <User
-                className={`w-4 h-4 text-slate-500 ${avatarUrl ? "hidden" : ""}`}
-              />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-text-primary truncate">
-                {user?.full_name || "User"}
-              </p>
-              <Badge variant="role" value={role} size="sm" />
-            </div>
-          </div>
-
-          {/* Logout button */}
-          <button
-            onClick={handleLogout}
-            disabled={logoutMutation.isPending}
-            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm font-medium text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 cursor-pointer disabled:opacity-50"
-          >
-            <LogOut className="w-[18px] h-[18px]" />
-            <span>
-              {logoutMutation.isPending ? "Đang đăng xuất..." : "Đăng xuất"}
-            </span>
-          </button>
-        </div>
       </aside>
     </>
   );
