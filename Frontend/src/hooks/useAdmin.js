@@ -263,13 +263,13 @@ export const useAdminMajors = (facultyCode = null) => {
   return { majorsQuery, createMutation, updateMutation, deleteMutation };
 };
 
-export const useAdminSubjects = (majorCode = null) => {
+export const useAdminSubjects = (majorCode = null, facultyCode = null) => {
   const queryClient = useQueryClient();
 
   const subjectsQuery = useQuery({
-    queryKey: ["adminSubjects", majorCode || "all"],
+    queryKey: ["adminSubjects", majorCode || "all", facultyCode || "all"],
     queryFn: async () => {
-      const res = await getSubjectsByMajorAdmin(majorCode);
+      const res = await getSubjectsByMajorAdmin(majorCode, facultyCode);
       const data = res.data?.data;
       return Array.isArray(data) ? data : data?.subjects || [];
     },

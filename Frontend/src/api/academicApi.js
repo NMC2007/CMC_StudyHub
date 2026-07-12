@@ -39,14 +39,17 @@ export const getMajorsByFaculty = (facultyCode) =>
   });
 
 /**
- * Lấy Môn học theo mã Ngành (major_code).
+ * Lấy Môn học theo mã Ngành (major_code) hoặc mã Khoa (faculty_code).
  * @param {string} majorCode - Mã ngành (VD: 'BIT')
+ * @param {string} facultyCode - Mã khoa (VD: 'CNTT')
  * @returns Promise — data.data: { subjects: [] }
  */
-export const getSubjectsByMajor = (majorCode) =>
-  api.get('/academic/subjects', {
-    params: majorCode ? { major_code: majorCode } : {},
-  });
+export const getSubjectsByMajor = (majorCode, facultyCode) => {
+  const params = {};
+  if (majorCode) params.major_code = majorCode;
+  else if (facultyCode) params.faculty_code = facultyCode;
+  return api.get('/academic/subjects', { params });
+};
 
 // ─── ADMIN — COHORTS ──────────────────────────────────────────────────────────
 
@@ -91,10 +94,12 @@ export const deleteMajor = (id) =>
 
 // ─── ADMIN — SUBJECTS ─────────────────────────────────────────────────────────
 
-export const getSubjectsByMajorAdmin = (majorCode) =>
-  api.get('/academic/subjects', {
-    params: majorCode ? { major_code: majorCode } : {},
-  });
+export const getSubjectsByMajorAdmin = (majorCode, facultyCode) => {
+  const params = {};
+  if (majorCode) params.major_code = majorCode;
+  else if (facultyCode) params.faculty_code = facultyCode;
+  return api.get('/academic/subjects', { params });
+};
 
 export const createSubject = (body) =>
   api.post('/academic/subjects', body);

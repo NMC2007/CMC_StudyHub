@@ -131,11 +131,11 @@ export const deleteMajor = async (req, res, next) => {
 // SUBJECT (Môn học)
 // ==========================================
 
-/** GET /api/v1/academic/subjects?major_code=... */
+/** GET /api/v1/academic/subjects?major_code=...&faculty_code=... */
 export const getAllSubjects = async (req, res, next) => {
     try {
-        const { major_code } = req.query;
-        const result = await academicService.getAllSubjects(major_code);
+        const { major_code, faculty_code } = req.query;
+        const result = await academicService.getAllSubjects(major_code, faculty_code);
         return res.status(result.statusCode).json(toAPIResponse(result.statusCode, result.message, result.data, result.errors));
     } catch (error) { next(error); }
 };

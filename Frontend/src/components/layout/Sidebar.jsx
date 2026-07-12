@@ -44,6 +44,10 @@ const SHARED_MENU = [
 
 const ADMIN_MENU = [
   { to: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+  { to: "/documents", icon: FileText, label: "Tài liệu" },
+  { to: "/search", icon: Search, label: "Tìm kiếm" },
+  { to: "/favorites", icon: Heart, label: "Yêu thích" },
+  { to: "/groups", icon: Users, label: "Nhóm học tập" },
   { to: "/admin/users", icon: UserCog, label: "Quản lý Users" },
   { to: "/admin/academic", icon: GraduationCap, label: "Học thuật" },
   { to: "/admin/cron", icon: Clock, label: "Cron Jobs" },
@@ -174,15 +178,18 @@ export default function Sidebar({ isOpen, onClose }) {
               {avatarUrl ? (
                 <img
                   src={avatarUrl}
-                  alt={user?.full_name || 'Avatar'}
+                  alt={user?.full_name || "Avatar"}
                   className="w-full h-full object-cover"
                   onError={(e) => {
-                    e.target.style.display = 'none';
-                    if (e.target.nextSibling) e.target.nextSibling.style.display = 'block';
+                    e.target.style.display = "none";
+                    if (e.target.nextSibling)
+                      e.target.nextSibling.style.display = "block";
                   }}
                 />
               ) : null}
-              <User className={`w-4 h-4 text-slate-500 ${avatarUrl ? 'hidden' : ''}`} />
+              <User
+                className={`w-4 h-4 text-slate-500 ${avatarUrl ? "hidden" : ""}`}
+              />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-text-primary truncate">

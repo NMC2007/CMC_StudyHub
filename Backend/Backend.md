@@ -217,7 +217,7 @@ Tách biệt thành hai cấu hình Middleware chuyên biệt:
 
 ### 4.6. Cấu trúc Học thuật, Admin Stats & Cron Triggers (Dành cho Admin)
 
-- `GET / POST / PUT / DELETE /api/v1/academic/*`: Các API CRUD cho Cohorts, Faculties, Majors, Subjects.
+- `GET / POST / PUT / DELETE /api/v1/academic/*`: Các API CRUD cho Cohorts, Faculties, Majors, Subjects. Cụ thể endpoint `GET /api/v1/academic/subjects` hỗ trợ lọc theo query `?major_code=...` hoặc `?faculty_code=...`.
 - `GET /api/v1/admin/stats`: Lấy các chỉ số thống kê tổng quan hệ thống (`total_users`, `total_documents`, `total_groups`, `total_views`).
 - `GET /api/v1/admin/system/health`: Lấy thông số giám sát sức khỏe hệ thống (Trạng thái DB, RAM, CPU load, Uptime).
 - `PATCH /api/v1/admin/users/:id/status`: Khóa (`BANNED`), vô hiệu hóa (`INACTIVE`) hoặc kích hoạt (`ACTIVE`) tài khoản bởi Admin. Tự động thu hồi toàn bộ Refresh Token nếu khóa/vô hiệu hóa.

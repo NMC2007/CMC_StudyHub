@@ -279,12 +279,14 @@ export const deleteMajor = async (id) => {
 // SUBJECT SERVICE
 // ==========================================
 
-export const getAllSubjects = async (majorCode) => {
-    const subjects = await repo.findAllSubjects(majorCode);
+export const getAllSubjects = async (majorCode, facultyCode) => {
+    const subjects = await repo.findAllSubjects(majorCode, facultyCode);
     return {
         statusCode: 200,
         message: majorCode
             ? `Lấy danh sách môn học thuộc ngành '${majorCode}' thành công.`
+            : facultyCode
+            ? `Lấy danh sách môn học thuộc khoa '${facultyCode}' thành công.`
             : "Lấy danh sách tất cả môn học thành công.",
         data: subjects.map(toSubjectResponse),
         errors: null,

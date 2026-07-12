@@ -69,7 +69,7 @@ export default function AcademicPage() {
   const cohortsHook = useAdminCohorts();
   const facultiesHook = useAdminFaculties();
   const majorsHook = useAdminMajors(selectedFacultyCode);
-  const subjectsHook = useAdminSubjects(selectedMajorCode);
+  const subjectsHook = useAdminSubjects(selectedMajorCode, selectedFacultyCode);
 
   // Reset major selection when faculty changes
   useEffect(() => {

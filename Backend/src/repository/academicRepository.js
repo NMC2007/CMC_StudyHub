@@ -129,13 +129,15 @@ export const deleteMajor = async (id) => {
 
 /**
  * Lấy danh sách môn học.
- * Hỗ trợ lọc theo major_code (ngành).
+ * Hỗ trợ lọc theo major_code (ngành) hoặc faculty_code (khoa).
  * Luôn eager load quan hệ majors để DTO trả về đầy đủ.
  */
-export const findAllSubjects = async (majorCode) => {
+export const findAllSubjects = async (majorCode, facultyCode) => {
     const where = {};
     if (majorCode) {
         where.majors = { code: majorCode };
+    } else if (facultyCode) {
+        where.majors = { faculty: { code: facultyCode } };
     }
     return await subjectRepo.find({
         where,
