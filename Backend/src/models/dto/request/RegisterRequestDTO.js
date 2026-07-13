@@ -18,6 +18,7 @@ import {
     validatePhone,
     validateRole,
     validateDob,
+    validateUserCode,
 } from "#utils/validationHelper.js";
 
 /**
@@ -33,6 +34,7 @@ export const validateRegisterRequest = (body) => {
     if (body.username) body.username = String(body.username).trim().toLowerCase();
     if (body.full_name) body.full_name = String(body.full_name).trim();
     if (body.phone) body.phone = String(body.phone).trim();
+    if (body.code) body.code = String(body.code).trim().toUpperCase();
     if (body.cohort_code) body.cohort_code = String(body.cohort_code).trim().toUpperCase();
     if (body.faculty_code) body.faculty_code = String(body.faculty_code).trim().toUpperCase();
     if (body.major_code) body.major_code = String(body.major_code).trim().toUpperCase();
@@ -56,6 +58,12 @@ export const validateRegisterRequest = (body) => {
 
     const roleCheck = validateRole(body.role);
     if (!roleCheck.isValid) errors.push(roleCheck.message);
+
+    // Validate code sau khi có role hợp lệ
+    if (roleCheck.isValid) {
+        const codeCheck = validateUserCode(body.code, body.role);
+        if (!codeCheck.isValid) errors.push(codeCheck.message);
+    }
 
     // === 3. Validate trường tùy chọn (phone) ===
     const phoneCheck = validatePhone(body.phone);

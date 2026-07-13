@@ -26,6 +26,7 @@ POST {{baseUrl}}/register
 Content-Type: {{contentType}}
 
 {
+  "code": "BIT250051",
   "full_name": "Nguyễn Văn Sinh Viên CNTT",
   "username": "sinhvienbit",
   "email": "sinhvienbit@studyhub.edu.vn",
@@ -43,6 +44,7 @@ POST {{baseUrl}}/register
 Content-Type: {{contentType}}
 
 {
+  "code": "BCS250052",
   "full_name": "Trần Văn Khoa Học Máy Tính",
   "username": "sinhvienbcs",
   "email": "sinhvienbcs@studyhub.edu.vn",
@@ -60,6 +62,7 @@ POST {{baseUrl}}/register
 Content-Type: {{contentType}}
 
 {
+  "code": "BAI250053",
   "full_name": "Lê Thị Trí Tuệ Nhân Tạo",
   "username": "sinhvienbai",
   "email": "sinhvienbai@studyhub.edu.vn",
@@ -77,6 +80,7 @@ POST {{baseUrl}}/register
 Content-Type: {{contentType}}
 
 {
+  "code": "IT123456",
   "full_name": "Trần Thị Giảng Viên",
   "username": "giangvienit",
   "email": "giangvienit@studyhub.edu.vn",
@@ -92,6 +96,7 @@ POST {{baseUrl}}/register
 Content-Type: {{contentType}}
 
 {
+  "code": "BIT250054",
   "full_name": "Lê Văn Lỗi",
   "username": "sinhvienloi",
   "email": "sinhvienloi@studyhub.edu.vn",
@@ -107,6 +112,7 @@ POST {{baseUrl}}/register
 Content-Type: {{contentType}}
 
 {
+  "code": "BIT250055",
   "full_name": "Trần Văn A",
   "username": "tranvana",
   "email": "tranvana@studyhub.edu.vn",
@@ -124,6 +130,7 @@ POST {{baseUrl}}/register
 Content-Type: {{contentType}}
 
 {
+  "code": "BIT250051",
   "full_name": "Nguyễn Văn Sinh Viên Trùng",
   "username": "sinhvienk1",
   "email": "sinhvienk1@studyhub.edu.vn",

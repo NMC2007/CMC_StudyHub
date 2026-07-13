@@ -40,6 +40,13 @@ export const User = new EntitySchema({
             unique: true,
             nullable: false,
         },
+        // === Mã người dùng (Mã SV/GV/Admin) - Unique ===
+        code: {
+            type: "varchar",
+            length: 11,
+            unique: true,
+            nullable: false,
+        },
         // === Email - Unique ===
         email: {
             type: "varchar",

@@ -171,7 +171,8 @@ Tách biệt thành hai cấu hình Middleware chuyên biệt:
 - `POST /api/v1/auth/refresh`: Nhận Refresh Token từ body/cookie, kiểm tra trong DB bảng `refresh_tokens`. Nếu hợp lệ và chưa hết hạn, cấp lại AccessToken mới.
 - `POST /api/v1/auth/logout`: Xóa bản ghi Refresh Token tương ứng trong database.
 - `GET /api/v1/users/profile`: Lấy thông tin tài khoản hiện tại.
-- `GET /api/v1/users`: Lấy danh sách toàn bộ người dùng trong hệ thống kèm phân trang & lọc (`page`, `limit`, `role`, `q`). Yêu cầu quyền truy cập `ADMIN`.
+- `GET /api/v1/users`: Lấy danh sách toàn bộ người dùng trong hệ thống kèm phân trang & lọc (`page`, `limit`, `role`, `q`).
+- `GET /api/v1/users/:id`: Lấy thông tin chi tiết của một người dùng theo ID.
 - `PUT /api/v1/users/profile`: Cập nhật thông tự cơ bản.
 - `PUT /api/v1/users/avatar`: Nhận file ảnh từ Avatar Multer Middleware, xóa file ảnh cũ vật lý (nếu có), cập nhật đường dẫn `avatar` mới vào bảng `users`.
 

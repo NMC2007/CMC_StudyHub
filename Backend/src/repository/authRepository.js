@@ -59,6 +59,15 @@ export const findUserByPhone = async (phone) => {
 };
 
 /**
+ * Tìm user theo mã người dùng (code) (dùng để check trùng khi đăng ký).
+ * @param {string} code
+ * @returns {Promise<Object|null>}
+ */
+export const findUserByCode = async (code) => {
+    return await userRepository.findOneBy({ code });
+};
+
+/**
  * Tìm user theo ID.
  * @param {number} id
  * @returns {Promise<Object|null>}

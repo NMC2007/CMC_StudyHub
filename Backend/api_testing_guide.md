@@ -15,6 +15,7 @@ Tài liệu này tổng hợp toàn bộ các API đang được cung cấp bở
 - **Body (`application/json`):**
   ```json
   {
+    "code": "BIT250052",
     "full_name": "Nguyễn Văn A",
     "username": "nva2004",
     "email": "nva@studyhub.edu.vn",
@@ -78,7 +79,7 @@ _(Lưu ý: Bắt đầu từ đây, mọi API yêu cầu đính kèm Header: `Au
 ### 2.2. Lấy danh sách toàn bộ người dùng (Phân trang & Lọc)
 
 - **Endpoint:** `GET /users`
-- **Quyền:** Chỉ Admin (`ADMIN`)
+- **Quyền:** Mọi User đăng nhập
 - **Query Parameters (Tuỳ chọn):**
   - `page`: Trang hiện tại (Mặc định: 1).
   - `limit`: Số lượng mỗi trang (Mặc định: 20, tối đa 100).
@@ -94,6 +95,7 @@ _(Lưu ý: Bắt đầu từ đây, mọi API yêu cầu đính kèm Header: `Au
       "users": [
         {
           "id": 1,
+          "code": "BIT250052",
           "full_name": "Nguyễn Văn A",
           "role": "STUDENT",
           "email": "nva@studyhub.edu.vn"
@@ -110,7 +112,14 @@ _(Lưu ý: Bắt đầu từ đây, mọi API yêu cầu đính kèm Header: `Au
   }
   ```
 
-### 2.3. Cập nhật thông tin cá nhân
+### 2.3. Lấy thông tin chi tiết người dùng theo ID
+
+- **Endpoint:** `GET /users/:id`
+- **Quyền:** Mọi User đăng nhập
+- **Mô tả:** Trả về thông tin chi tiết của một người dùng dựa theo ID (sử dụng khi muốn xem trang thông tin cá nhân của người khác).
+- **Response mẫu:** Tương tự như đối tượng user trong API Lấy thông tin cá nhân.
+
+### 2.4. Cập nhật thông tin cá nhân
 
 - **Endpoint:** `PUT /users/profile`
 - **Body (`application/json`):**

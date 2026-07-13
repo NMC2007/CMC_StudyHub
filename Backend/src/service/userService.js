@@ -41,6 +41,30 @@ export const getUserProfile = async (userId) => {
 };
 
 /**
+ * Lấy thông tin chi tiết của người dùng bất kỳ theo ID.
+ * @param {number} userId
+ * @returns {Promise<{ statusCode: number, message: string, data: Object|null, errors: string[]|null }>}
+ */
+export const getUserById = async (userId) => {
+    const user = await findUserProfileById(userId);
+    if (!user) {
+        return {
+            statusCode: 404,
+            message: "Không tìm thấy người dùng.",
+            data: null,
+            errors: ["User Not Found"],
+        };
+    }
+
+    return {
+        statusCode: 200,
+        message: "Lấy thông tin người dùng thành công.",
+        data: toUserResponse(user),
+        errors: null,
+    };
+};
+
+/**
  * Cập nhật thông tin cá nhân của người dùng.
  * @param {number} userId
  * @param {Object} body - Dữ liệu cập nhật (full_name, phone, dob)

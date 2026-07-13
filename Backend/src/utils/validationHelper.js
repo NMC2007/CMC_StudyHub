@@ -162,3 +162,38 @@ export const validateDob = (dob) => {
 
     return { isValid: true, message: "" };
 };
+
+/**
+ * Kiểm tra mã người dùng (code) hợp lệ theo role:
+ * - ADMIN: Bắt đầu bằng 'AD', độ dài 9-11 ký tự (VD: AD1234567)
+ * - STUDENT/LECTURER: Bắt đầu bằng 3-5 chữ cái hoa, theo sau là số, độ dài 9-11 ký tự (VD: BIT250052)
+ * @param {string} code
+ * @param {string} role
+ * @returns {{ isValid: boolean, message: string }}
+ */
+export const validateUserCode = (code, role) => {
+    if (!code || String(code).trim() === "") {
+        return { isValid: false, message: "Mã người dùng (code) không được để trống." };
+    }
+
+    const trimmedCode = String(code).trim().toUpperCase();
+
+    if (trimmedCode.length < 9 || trimmedCode.length > 11) {
+        return { isValid: false, message: "Mã người dùng phải có từ 9 đến 11 ký tự." };
+    }
+
+    if (role === "ADMIN") {
+        const adminRegex = /^AD[A-Z0-9]{7,9}$/;
+        if (!adminRegex.test(trimmedCode)) {
+            return { isValid: false, message: "Mã Admin phải bắt đầu bằng 'AD' và chỉ chứa chữ/số." };
+        }
+    } else {
+        // Áp dụng chung cho STUDENT và LECTURER
+        const studentLecturerRegex = /^[A-Z]{3,5}[0-9]{4,8}$/;
+        if (!studentLecturerRegex.test(trimmedCode)) {
+            return { isValid: false, message: "Mã Sinh viên/Giảng viên phải bắt đầu bằng 3-5 chữ cái in hoa, theo sau là các chữ số." };
+        }
+    }
+
+    return { isValid: true, message: "" };
+};

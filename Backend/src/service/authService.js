@@ -18,6 +18,7 @@ import {
     findUserByEmail,
     findUserByUsername,
     findUserByPhone,
+    findUserByCode,
     findUserById,
     createUser,
     saveRefreshToken,
@@ -84,6 +85,17 @@ export const register = async (body) => {
         };
     }
 
+    // Check trùng mã người dùng (code)
+    const existingCode = await findUserByCode(body.code);
+    if (existingCode) {
+        return {
+            statusCode: 409,
+            message: "Mã người dùng này đã được sử dụng.",
+            data: null,
+            errors: ["Mã người dùng đã tồn tại."],
+        };
+    }
+
     // Bước 4: Check trùng phone (nếu có)
     if (body.phone) {
         const existingPhone = await findUserByPhone(body.phone);
@@ -143,6 +155,7 @@ export const register = async (body) => {
 
     // Bước 7: Chuẩn bị dữ liệu user và lưu vào DB
     const userData = {
+        code: body.code,
         full_name: body.full_name,
         username: body.username,
         email: body.email,

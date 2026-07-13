@@ -76,9 +76,17 @@ Content-Type: {{contentType}}
 
 
 ### =========================================================================
-### 3. LẤY DANH SÁCH TOÀN BỘ NGƯỜI DÙNG (GET /api/v1/users) - CHỈ ADMIN
+### 3. LẤY DANH SÁCH TOÀN BỘ NGƯỜI DÙNG (GET /api/v1/users)
 ### =========================================================================
 
-### 3.1 Lấy danh sách thành công (Cần có quyền ADMIN)
+### 3.1 Lấy danh sách thành công (Mọi user đăng nhập)
 GET {{baseUrl}}/users
+Authorization: Bearer {{accessToken}}
+
+### =========================================================================
+### 4. LẤY THÔNG TIN CHI TIẾT NGƯỜI DÙNG (GET /api/v1/users/:id)
+### =========================================================================
+
+### 4.1 Lấy thông tin user có ID = 1
+GET {{baseUrl}}/users/1
 Authorization: Bearer {{accessToken}}

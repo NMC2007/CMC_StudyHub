@@ -17,6 +17,7 @@ export const toUserResponse = (userEntity) => {
 
     return {
         id: userEntity.id,
+        code: userEntity.code || null,
         full_name: userEntity.full_name,
         username: userEntity.username,
         email: userEntity.email,
