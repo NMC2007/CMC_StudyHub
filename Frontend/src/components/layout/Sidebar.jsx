@@ -48,7 +48,6 @@ const ADMIN_MENU = [
   { to: "/search", icon: Search, label: "Tìm kiếm" },
   { to: "/favorites", icon: Heart, label: "Yêu thích" },
   { to: "/groups", icon: Users, label: "Nhóm học tập" },
-  { to: "/profile", icon: User, label: "Thông tin tài khoản" },
   { to: "/admin/users", icon: UserCog, label: "Quản lý Users" },
   { to: "/admin/academic", icon: GraduationCap, label: "Học thuật" },
   { to: "/admin/cron", icon: Clock, label: "Cron Jobs" },
@@ -157,7 +156,7 @@ export default function Sidebar({ isOpen, onClose }) {
                     <item.icon className="w-[18px] h-[18px] shrink-0" />
                     <span>{item.label}</span>
                   </NavLink>
-                 </li>
+                </li>
               );
             })}
           </ul>

@@ -81,7 +81,8 @@ export default function AdminDashboard() {
             </div>
             <div>
               <h2 className="text-xl md:text-2xl font-extrabold text-text-primary tracking-tight mb-1">
-                Xin chào, {user?.full_name || user?.username || "Quản trị viên"}!
+                Xin chào, {user?.full_name || user?.username || "Quản trị viên"}
+                !
               </h2>
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant="role" value="ADMIN" size="sm" />
@@ -205,7 +206,9 @@ export default function AdminDashboard() {
                   </p>
                   <div className="flex items-center gap-2">
                     <div className="flex items-center bg-white border border-slate-300 rounded-xl overflow-hidden px-2.5 py-1.5 focus-within:ring-2 focus-within:ring-brand-admin/20 focus-within:border-brand-admin">
-                      <span className="text-xs text-slate-400 mr-1.5 font-medium">≥</span>
+                      <span className="text-xs text-slate-400 mr-1.5 font-medium">
+                        ≥
+                      </span>
                       <input
                         type="number"
                         min="1"
@@ -252,7 +255,8 @@ export default function AdminDashboard() {
             </div>
 
             <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-400 text-center">
-              Lưu ý: Các tác vụ này cũng tự động chạy ngầm lúc 02:00 sáng mỗi ngày.
+              Lưu ý: Các tác vụ này cũng tự động chạy ngầm lúc 02:00 sáng mỗi
+              ngày.
             </div>
           </div>
         </div>
@@ -270,7 +274,7 @@ export default function AdminDashboard() {
                 Người Dùng Mới Đăng Ký Gần Đây
               </h3>
               <p className="text-xs text-text-secondary">
-                Danh sách 10 tài khoản vừa tham gia hệ thống
+                Danh sách {stats?.total_users} tài khoản vừa tham gia hệ thống
               </p>
             </div>
           </div>
@@ -304,12 +308,16 @@ export default function AdminDashboard() {
                   <th className="py-3 px-3.5 text-center">Vai trò</th>
                   <th className="py-3 px-3.5 text-center">Trạng thái</th>
                   <th className="py-3 px-3.5">Ngày tạo</th>
-                  <th className="py-3 px-3.5 text-right rounded-r-xl">Thao tác</th>
+                  <th className="py-3 px-3.5 text-right rounded-r-xl">
+                    Thao tác
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
                 {recentUsers.map((item) => {
-                  const avatarUrl = getAvatarUrl(item.avatar || item.avatar_url);
+                  const avatarUrl = getAvatarUrl(
+                    item.avatar || item.avatar_url,
+                  );
                   const isBanned = item.status === "BANNED";
                   const isInactive = item.status === "INACTIVE";
 
@@ -345,7 +353,11 @@ export default function AdminDashboard() {
                         {item.email}
                       </td>
                       <td className="py-3 px-3.5 text-center">
-                        <Badge variant="role" value={item.role || "STUDENT"} size="sm" />
+                        <Badge
+                          variant="role"
+                          value={item.role || "STUDENT"}
+                          size="sm"
+                        />
                       </td>
                       <td className="py-3 px-3.5 text-center">
                         <span
@@ -353,8 +365,8 @@ export default function AdminDashboard() {
                             isBanned
                               ? "bg-red-50 text-red-700 border border-red-200"
                               : isInactive
-                              ? "bg-amber-50 text-amber-700 border border-amber-200"
-                              : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                : "bg-emerald-50 text-emerald-700 border border-emerald-200"
                           }`}
                         >
                           <span
@@ -362,8 +374,8 @@ export default function AdminDashboard() {
                               isBanned
                                 ? "bg-red-600"
                                 : isInactive
-                                ? "bg-amber-500"
-                                : "bg-emerald-500"
+                                  ? "bg-amber-500"
+                                  : "bg-emerald-500"
                             }`}
                           />
                           {item.status || "ACTIVE"}
@@ -401,7 +413,15 @@ export default function AdminDashboard() {
   );
 }
 
-function StatCard({ icon: Icon, label, value, isLoading, color, bgColor, linkTo }) {
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  isLoading,
+  color,
+  bgColor,
+  linkTo,
+}) {
   const content = (
     <div className="bg-card rounded-2xl p-5 border border-border shadow-2xs hover:shadow-md transition-all flex items-center gap-4 group">
       <div
@@ -425,7 +445,11 @@ function StatCard({ icon: Icon, label, value, isLoading, color, bgColor, linkTo 
   );
 
   if (linkTo) {
-    return <Link to={linkTo} className="block">{content}</Link>;
+    return (
+      <Link to={linkTo} className="block">
+        {content}
+      </Link>
+    );
   }
   return content;
 }

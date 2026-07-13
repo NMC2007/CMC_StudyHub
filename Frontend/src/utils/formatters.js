@@ -189,3 +189,27 @@ export const getAvatarUrl = (avatarPath) => {
   const origin = import.meta.env.VITE_API_URL?.replace(/\/api\/v1\/?$/, '') || 'http://localhost:8081';
   return `${origin}${avatarPath.startsWith('/') ? '' : '/'}${avatarPath}`;
 };
+
+// ─── FILE URL ─────────────────────────────────────────────────────────────────
+
+/**
+ * Chuyển đổi đường dẫn file tài liệu (tương đối từ backend hoặc tuyệt đối) thành URL đầy đủ hợp lệ.
+ * Dùng cho: DocumentPreviewModal (mở PDF, tải .docx/.pptx/.zip).
+ * Logic tương tự getAvatarUrl — chuẩn hóa mọi đường dẫn về backend origin.
+ *
+ * @param {string} filePath - Đường dẫn file từ field `file_url` của API
+ * @returns {string|null}
+ *
+ * @example
+ * getFileUrl('/uploads/documents/abc.pdf')
+ * // => 'http://localhost:8081/uploads/documents/abc.pdf'
+ * getFileUrl('http://cdn.example.com/file.pdf')
+ * // => 'http://cdn.example.com/file.pdf' (giữ nguyên nếu đã là URL tuyệt đối)
+ */
+export const getFileUrl = (filePath) => {
+  if (!filePath) return null;
+  if (typeof filePath !== 'string') return null;
+  if (filePath.startsWith('http') || filePath.startsWith('data:')) return filePath;
+  const origin = import.meta.env.VITE_API_URL?.replace(/\/api\/v1\/?$/, '') || 'http://localhost:8081';
+  return `${origin}${filePath.startsWith('/') ? '' : '/'}${filePath}`;
+};

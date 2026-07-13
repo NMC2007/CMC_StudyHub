@@ -31,6 +31,7 @@ import Badge from "#/components/ui/Badge";
 import ConfirmModal from "#/components/ui/ConfirmModal";
 import EditDocumentModal from "#/components/document/EditDocumentModal";
 import ShareDocToGroupModal from "#/components/document/ShareDocToGroupModal";
+import DocumentPreviewModal from "#/components/document/DocumentPreviewModal";
 import {
   useToggleLike,
   useToggleBookmark,
@@ -78,6 +79,8 @@ const DocumentCard = ({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  // State mở DocumentPreviewModal — thay thế window.open để sửa lỗi 404 & ghi nhận view_count
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const softDeleteMutation = useSoftDeleteDocument();
 
   const handleInternalDelete = () => {
@@ -203,11 +206,12 @@ const DocumentCard = ({
     });
   };
 
-  const handleOpenDoc = (e) => {
+  // Mở DocumentPreviewModal thay vì window.open để:
+  //  1. Tránh lỗi 404 (URL tương đối backend được xử lý bởi getFileUrl bên trong modal)
+  //  2. Ghi nhận view_count thông qua useDocumentDetail bên trong modal
+  const handleOpenPreview = (e) => {
     e.stopPropagation();
-    if (doc.file_url) {
-      window.open(doc.file_url, "_blank", "noopener,noreferrer");
-    }
+    setIsPreviewModalOpen(true);
   };
 
   const getRoleBadge = (role) => {
@@ -238,7 +242,7 @@ const DocumentCard = ({
 
   return (
     <div
-      onClick={handleOpenDoc}
+      onClick={handleOpenPreview}
       className={`group relative bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-200 flex flex-col justify-between gap-4 cursor-pointer select-none ${className}`.trim()}
     >
       {/* ─── Top Header: Document Type Badge & Owner Actions ─── */}
@@ -447,20 +451,23 @@ const DocumentCard = ({
               </button>
             )}
 
-          {/* External Read link */}
+          {/* Nút Mở xem trước / Chi tiết tài liệu — mở DocumentPreviewModal */}
           {doc.file_url && (
-            <div
+            <button
+              type="button"
+              onClick={handleOpenPreview}
               className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 group-hover:text-brand-student transition-colors"
-              title="Mở tài liệu"
+              title="Xem trước tài liệu"
+              aria-label="Xem trước tài liệu"
             >
               <ExternalLink className="w-3.5 h-3.5" />
-            </div>
+            </button>
           )}
         </div>
       </div>
 
-      {/* Modals tự trị khi component cha không truyền onEdit / onDelete */}
-      {!onEdit && (
+      {/* Modals tự trị (Chỉ render div wrapper khi modal mở để tránh tạo DOM div rỗng gây thêm gap-4 trong flex col) */}
+      {!onEdit && isEditModalOpen && (
         <div onClick={(e) => e.stopPropagation()}>
           <EditDocumentModal
             isOpen={isEditModalOpen}
@@ -470,7 +477,7 @@ const DocumentCard = ({
         </div>
       )}
 
-      {!onDelete && (
+      {!onDelete && isConfirmDeleteOpen && (
         <div onClick={(e) => e.stopPropagation()}>
           <ConfirmModal
             isOpen={isConfirmDeleteOpen}
@@ -487,13 +494,26 @@ const DocumentCard = ({
       )}
 
       {/* Modal chọn nhóm để chia sẻ tài liệu */}
-      <div onClick={(e) => e.stopPropagation()}>
-        <ShareDocToGroupModal
-          isOpen={isShareModalOpen}
-          onClose={() => setIsShareModalOpen(false)}
-          document={doc}
-        />
-      </div>
+      {isShareModalOpen && (
+        <div onClick={(e) => e.stopPropagation()}>
+          <ShareDocToGroupModal
+            isOpen={isShareModalOpen}
+            onClose={() => setIsShareModalOpen(false)}
+            document={doc}
+          />
+        </div>
+      )}
+
+      {/* Modal Xem trước & Chi tiết Tài liệu — Sửa lỗi 404 + Ghi nhận view_count */}
+      {isPreviewModalOpen && (
+        <div onClick={(e) => e.stopPropagation()}>
+          <DocumentPreviewModal
+            isOpen={isPreviewModalOpen}
+            onClose={() => setIsPreviewModalOpen(false)}
+            document={doc}
+          />
+        </div>
+      )}
     </div>
   );
 };
