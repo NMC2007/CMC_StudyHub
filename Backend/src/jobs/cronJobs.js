@@ -48,7 +48,8 @@ export const runTrashCleanupTask = async (days = 15) => {
         }
 
         if (deletedCount > 0) {
-            console.info(`🧹 [CronJob - Trash Cleanup] Đã dọn dẹp vĩnh viễn ${deletedCount} tài liệu quá hạn ${days} ngày (${filesRemovedCount} file vật lý).`);
+            const timeDesc = days === 0 ? "toàn bộ (0 ngày)" : `quá hạn ${days} ngày`;
+            console.info(`🧹 [CronJob - Trash Cleanup] Đã dọn dẹp vĩnh viễn ${deletedCount} tài liệu ${timeDesc} (${filesRemovedCount} file vật lý).`);
         }
 
         return { deletedCount, filesRemovedCount };

@@ -38,7 +38,7 @@ export default function CronPage() {
     setTrashResult(null);
     try {
       const res = await triggerTrashCleanup.mutateAsync({
-        days: Number(trashDays) || 15,
+        days: trashDays !== "" && !isNaN(trashDays) ? Number(trashDays) : 15,
       });
       setTrashResult({
         success: true,
@@ -137,7 +137,7 @@ export default function CronPage() {
                     <span className="text-slate-400 mr-2 font-medium">≥</span>
                     <input
                       type="number"
-                      min="1"
+                      min="0"
                       max="365"
                       value={trashDays}
                       onChange={(e) => setTrashDays(e.target.value)}
@@ -145,7 +145,7 @@ export default function CronPage() {
                     />
                     <span className="text-slate-400 ml-2 font-medium">ngày</span>
                   </div>
-                  <span className="text-slate-400 font-medium">(Khuyến nghị: 15 ngày)</span>
+                  <span className="text-slate-400 font-medium">(Nhập 0 để dọn sạch ngay lập tức)</span>
                 </div>
               </div>
             </div>

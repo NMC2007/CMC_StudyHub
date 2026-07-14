@@ -27,7 +27,7 @@ export const useMyGroups = (options = {}) =>
 
 export const useGroupDetail = (groupId, options = {}) =>
   useQuery({
-    queryKey: ['groups', 'detail', groupId],
+    queryKey: ['groups', 'detail', groupId ? String(groupId) : groupId],
     queryFn: () => getGroupById(groupId).then((r) => r.data.data),
     enabled: !!groupId,
     ...options,
@@ -35,7 +35,7 @@ export const useGroupDetail = (groupId, options = {}) =>
 
 export const useGroupDocuments = (groupId, params, options = {}) =>
   useQuery({
-    queryKey: ['groups', 'documents', groupId, params],
+    queryKey: ['groups', 'documents', groupId ? String(groupId) : groupId, params],
     queryFn: () => getGroupDocuments(groupId, params).then((r) => r.data.data),
     enabled: !!groupId,
     placeholderData: (prev) => prev,
@@ -62,9 +62,14 @@ export const useAddMembers = (groupId) => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body) => addMembers(groupId, body),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       toast.success('Đã thêm thành viên vào nhóm!');
-      qc.invalidateQueries({ queryKey: ['groups', 'detail', groupId] });
+      if (groupId) {
+        qc.invalidateQueries({ queryKey: ['groups', 'detail', String(groupId)] });
+        qc.invalidateQueries({ queryKey: ['groups', 'detail', Number(groupId)] });
+      }
+      qc.invalidateQueries({ queryKey: ['groups', 'detail'] });
+      qc.invalidateQueries({ queryKey: ['groups', 'my'] });
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || 'Thêm thành viên thất bại.');
@@ -78,7 +83,12 @@ export const useRemoveMember = (groupId) => {
     mutationFn: (userId) => removeMember(groupId, userId),
     onSuccess: () => {
       toast.success('Đã xóa thành viên khỏi nhóm.');
-      qc.invalidateQueries({ queryKey: ['groups', 'detail', groupId] });
+      if (groupId) {
+        qc.invalidateQueries({ queryKey: ['groups', 'detail', String(groupId)] });
+        qc.invalidateQueries({ queryKey: ['groups', 'detail', Number(groupId)] });
+      }
+      qc.invalidateQueries({ queryKey: ['groups', 'detail'] });
+      qc.invalidateQueries({ queryKey: ['groups', 'my'] });
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || 'Xóa thành viên thất bại.');

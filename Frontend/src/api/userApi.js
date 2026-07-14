@@ -36,3 +36,12 @@ export const updateAvatar = (formData) =>
  */
 export const getAllUsers = (params) =>
   api.get('/users', { params });
+
+/**
+ * Tìm kiếm người dùng theo từ khóa q (tên, mã code, email, username, phone) và lọc theo role.
+ * @param {{ q?: string, role?: string, limit?: number, page?: number }} params
+ * @returns Promise — data.data: { users: [], pagination: {} }
+ */
+export const searchUsers = (params) =>
+  api.get('/users/search', { params });
+

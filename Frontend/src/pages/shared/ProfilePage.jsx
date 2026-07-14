@@ -175,7 +175,7 @@ export default function ProfilePage() {
             <span>@{user.username}</span>
             <span className="text-slate-300">•</span>
             <span className="flex items-center gap-1 font-mono text-xs bg-slate-100 px-2 py-0.5 rounded-md text-slate-600">
-              <Hash className="w-3 h-3" /> ID: {user.id}
+              <Hash className="w-3 h-3" /> Code: {user.code || "Chưa cập nhật"}
             </span>
           </p>
 
@@ -252,8 +252,19 @@ export default function ProfilePage() {
               />
             </div>
 
-            {/* Read-only locked inputs (Email & Username) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-slate-100">
+            {/* Read-only locked inputs (Code, Email & Username) */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-3 border-t border-slate-100">
+              <div>
+                <Input
+                  label="Mã định danh (Code)"
+                  value={user.code || "Chưa cập nhật"}
+                  icon={Hash}
+                  disabled
+                  readOnly
+                  className="bg-slate-50 text-slate-500 font-mono text-xs cursor-not-allowed"
+                />
+              </div>
+
               <div>
                 <Input
                   label="Email (Không thể thay đổi)"

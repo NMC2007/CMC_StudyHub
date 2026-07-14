@@ -34,6 +34,11 @@ export const registerStep1Schema = z.object({
     .min(3, 'Tên đăng nhập phải có ít nhất 3 ký tự')
     .max(50, 'Tên đăng nhập không được vượt quá 50 ký tự')
     .regex(/^[a-zA-Z0-9_]+$/, 'Tên đăng nhập chỉ được chứa chữ cái, số và dấu gạch dưới'),
+  code: z
+    .string()
+    .min(3, 'Mã định danh (MSSV/MSGV) phải có ít nhất 3 ký tự')
+    .max(20, 'Mã định danh không được vượt quá 20 ký tự')
+    .regex(/^[a-zA-Z0-9]+$/, 'Mã định danh chỉ được chứa chữ cái và số'),
   email: z
     .string()
     .min(1, 'Vui lòng nhập email')
@@ -55,9 +60,15 @@ export const registerStep1Schema = z.object({
     .min(8, 'Mật khẩu phải có ít nhất 8 ký tự')
     .regex(/[A-Z]/, 'Mật khẩu phải chứa ít nhất 1 chữ hoa')
     .regex(/[0-9]/, 'Mật khẩu phải chứa ít nhất 1 chữ số'),
+  confirm_password: z
+    .string()
+    .min(1, 'Vui lòng xác nhận lại mật khẩu'),
   role: z.enum(['STUDENT', 'LECTURER'], {
     required_error: 'Vui lòng chọn vai trò',
   }),
+}).refine((data) => data.password === data.confirm_password, {
+  message: 'Mật khẩu xác nhận không khớp',
+  path: ['confirm_password'],
 });
 
 /**

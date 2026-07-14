@@ -99,23 +99,3 @@ export const searchUsers = async (req, res, next) => {
         next(error);
     }
 };
-
-/**
- * GET /api/v1/users/:id
- * Lấy thông tin chi tiết của user theo id
- */
-export const getUserById = async (req, res, next) => {
-    try {
-        const userId = parseInt(req.params.id, 10);
-        if (isNaN(userId)) {
-            return res.status(400).json(toAPIResponse(400, "ID người dùng không hợp lệ.", null, ["Invalid User ID"]));
-        }
-        const result = await userService.getUserById(userId);
-
-        return res
-            .status(result.statusCode)
-            .json(toAPIResponse(result.statusCode, result.message, result.data, result.errors));
-    } catch (error) {
-        next(error);
-    }
-};

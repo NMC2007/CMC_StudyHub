@@ -31,6 +31,7 @@ import {
   ArrowLeft,
   GraduationCap,
   UserCheck,
+  Hash,
 } from "lucide-react";
 
 import {
@@ -47,6 +48,7 @@ export default function RegisterPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [step1Data, setStep1Data] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // ref tham chiếu tới hàm setError của Step1Form để gọi từ bên ngoài
   const step1SetErrorRef = React.useRef(null);
@@ -105,6 +107,8 @@ export default function RegisterPage() {
             <Step1Form
               showPassword={showPassword}
               setShowPassword={setShowPassword}
+              showConfirmPassword={showConfirmPassword}
+              setShowConfirmPassword={setShowConfirmPassword}
               onNext={(data) => {
                 setStep1Data(data);
                 setCurrentStep(2);
@@ -122,9 +126,10 @@ export default function RegisterPage() {
               role={step1Data?.role}
               onBack={() => setCurrentStep(1)}
               onSubmit={(step2Data) => {
-                // Gộp dữ liệu Step 1 + Step 2 rồi gọi API đăng ký
+                // Gộp dữ liệu Step 1 + Step 2 rồi loại bỏ confirm_password trước khi gửi API
                 const fullData = { ...step1Data, ...step2Data };
-                registerMutation.mutate(fullData, {
+                const { confirm_password, ...payload } = fullData;
+                registerMutation.mutate(payload, {
                   onError: (error) => {
                     const status = error.response?.status;
                     const errors = error.response?.data?.errors || [];
@@ -142,6 +147,13 @@ export default function RegisterPage() {
 
                       if (setError) {
                         errorList.forEach((msg) => {
+                          if (/code|mã số|mã định danh/i.test(msg)) {
+                            setError("code", {
+                              type: "manual",
+                              message: msg,
+                            });
+                            hasStep1Error = true;
+                          }
                           if (/username|tên đăng nhập/i.test(msg)) {
                             setError("username", {
                               type: "manual",
@@ -235,6 +247,8 @@ function StepIndicator({ step, currentStep, label }) {
 function Step1Form({
   showPassword,
   setShowPassword,
+  showConfirmPassword,
+  setShowConfirmPassword,
   onNext,
   defaultValues,
   onSetErrorReady,
@@ -243,17 +257,21 @@ function Step1Form({
     register,
     handleSubmit,
     watch,
+    setValue,
     setError,
+    clearErrors,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(registerStep1Schema),
     defaultValues: defaultValues || {
       full_name: "",
       username: "",
+      code: "",
       email: "",
       phone: "",
       dob: "",
       password: "",
+      confirm_password: "",
       role: "",
     },
   });
@@ -262,6 +280,29 @@ function Step1Form({
   useEffect(() => {
     if (onSetErrorReady) onSetErrorReady(setError);
   }, [onSetErrorReady, setError]);
+
+  const codeValue = watch("code");
+  const prevCodeRef = useRef(defaultValues?.code || "");
+
+  // Tự động điền/cập nhật email khi nhập mã code theo định dạng code@st.cmcu.edu.vn
+  useEffect(() => {
+    if (codeValue === prevCodeRef.current) return;
+    prevCodeRef.current = codeValue;
+
+    if (codeValue !== undefined && codeValue.trim().length > 0) {
+      const cleanCode = codeValue.trim().toLowerCase();
+      setValue("email", `${cleanCode}@st.cmcu.edu.vn`, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+    } else {
+      setValue("email", "", {
+        shouldValidate: false,
+        shouldDirty: true,
+      });
+      clearErrors("email");
+    }
+  }, [codeValue, setValue, clearErrors]);
 
   const selectedRole = watch("role");
 
@@ -288,6 +329,22 @@ function Step1Form({
         helperText="Chỉ chứa chữ cái, số và dấu gạch dưới"
         error={errors.username}
         {...register("username")}
+      />
+
+      {/* Code (MSSV/MSGV) */}
+      <Input
+        label="Mã định danh (MSSV/MSGV)"
+        placeholder="Ví dụ: BIT250052"
+        icon={Hash}
+        required
+        autoComplete="off"
+        helperText="Mã sinh viên hoặc mã giảng viên của bạn"
+        error={errors.code}
+        {...register("code", {
+          onChange: (e) => {
+            e.target.value = e.target.value.toUpperCase();
+          },
+        })}
       />
 
       {/* Email */}
@@ -348,6 +405,33 @@ function Step1Form({
           </button>
         }
         {...register("password")}
+      />
+
+      {/* Confirm Password */}
+      <Input
+        label="Xác nhận mật khẩu"
+        placeholder="Nhập lại mật khẩu phía trên"
+        type={showConfirmPassword ? "text" : "password"}
+        icon={Lock}
+        required
+        autoComplete="new-password"
+        error={errors.confirm_password}
+        rightElement={
+          <button
+            type="button"
+            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            className="text-slate-400 hover:text-slate-600 cursor-pointer p-0.5"
+            aria-label={showConfirmPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+            tabIndex={-1}
+          >
+            {showConfirmPassword ? (
+              <EyeOff className="w-4 h-4" />
+            ) : (
+              <Eye className="w-4 h-4" />
+            )}
+          </button>
+        }
+        {...register("confirm_password")}
       />
 
       {/* Role selector */}
@@ -453,16 +537,17 @@ function Step2Form({ role, onBack, onSubmit, isPending }) {
   };
 
   const handleCascadeChange = (newVals) => {
-    setValue("cohort_code", newVals.cohort_code || "", { shouldValidate: true });
-    setValue("faculty_code", newVals.faculty_code || "", { shouldValidate: true });
+    setValue("cohort_code", newVals.cohort_code || "", {
+      shouldValidate: true,
+    });
+    setValue("faculty_code", newVals.faculty_code || "", {
+      shouldValidate: true,
+    });
     setValue("major_code", newVals.major_code || "", { shouldValidate: true });
   };
 
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="flex flex-col gap-4"
-    >
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
       {/* Section title */}
       <div className="flex items-center gap-2 mb-1">
         <GraduationCap className="w-5 h-5 text-brand-student" />

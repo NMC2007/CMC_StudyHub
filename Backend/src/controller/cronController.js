@@ -14,12 +14,17 @@ import { runTrashCleanupTask, runTokenCleanupTask } from "#jobs/cronJobs.js";
  */
 export const triggerTrashCleanup = async (req, res, next) => {
     try {
-        const days = req.body?.days !== undefined ? Number(req.body.days) : 15;
+        const rawDays = req.body?.days;
+        const days = rawDays !== undefined && rawDays !== "" && !isNaN(rawDays) ? Number(rawDays) : 15;
         const result = await runTrashCleanupTask(days);
+
+        const msg = days === 0
+            ? "Kích hoạt thành công tác vụ dọn sạch toàn bộ tài liệu trong thùng rác."
+            : `Kích hoạt thành công tác vụ dọn dẹp tài liệu quá hạn ${days} ngày trong thùng rác.`;
 
         return res
             .status(200)
-            .json(toAPIResponse(200, `Kích hoạt thành công tác vụ dọn dẹp tài liệu quá hạn ${days} ngày trong thùng rác.`, result, null));
+            .json(toAPIResponse(200, msg, result, null));
     } catch (error) {
         next(error);
     }

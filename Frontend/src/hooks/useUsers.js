@@ -9,7 +9,7 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { getProfile, updateProfile, updateAvatar } from '#/api/userApi';
+import { getProfile, updateProfile, updateAvatar, searchUsers } from '#/api/userApi';
 import { useAuthStore } from '#/stores/useAuthStore';
 
 /**
@@ -71,3 +71,21 @@ export const useUpdateAvatar = () => {
     },
   });
 };
+
+/**
+ * Hook truy vấn và tìm kiếm danh sách người dùng.
+ * @param {{ q?: string, role?: string, limit?: number, page?: number }} params
+ * @param {Object} options - Các tùy chọn bổ sung cho useQuery (như enabled)
+ */
+export const useSearchUsers = (params, options = {}) => {
+  return useQuery({
+    queryKey: ['users', 'search', params],
+    queryFn: async () => {
+      const response = await searchUsers(params);
+      return response.data?.data || { users: [], pagination: {} };
+    },
+    staleTime: 30 * 1000, // 30s
+    ...options,
+  });
+};
+
