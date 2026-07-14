@@ -95,9 +95,10 @@ connectDB().then(() => {
     // Khởi động bộ lập lịch Node-Cron
     initCronJobs();
 
-    app.listen(PORT, () => {
+    app.listen(PORT, "0.0.0.0", () => {
         console.log(`🚀 Server đang chạy tại: http://localhost:${PORT}`);
         console.log(`🌐 CORS: Đã cho phép [ ${allowedOrigins.join(", ")} ] Truy cập`);
+        console.log(`📡 LAN: Truy cập từ mạng nội bộ qua http://<IP_LAN_MÁY_BẠN>:${PORT}`);
     });
 }).catch((error) => {
     console.error("❌ Không thể khởi động server:", error.message);
