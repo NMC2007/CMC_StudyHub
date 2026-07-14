@@ -6,6 +6,7 @@
 
 import path from "path";
 import { cleanupFile, validateStudentUploadContext } from "#utils/uploadGuard.js";
+import { UPLOAD_CONFIG } from "#config/constants.js";
 import { AppDataSource } from "#config/db.js";
 import {
     saveGroup,
@@ -416,7 +417,7 @@ export const uploadGroupDocumentService = async (groupId, user, file, body) => {
     if (!file) {
         return {
             statusCode: 400,
-            message: "Vui lòng chọn file tài liệu hợp lệ (.pdf, .docx, .pptx, .zip, tối đa 50MB).",
+            message: UPLOAD_CONFIG.DOC.ERROR_MESSAGE,
             data: null,
             errors: ["Missing Document File"],
         };

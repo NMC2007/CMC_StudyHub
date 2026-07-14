@@ -32,16 +32,25 @@ import { errorHandler } from "./advice/errorHandler.js";
 dotenv.config();
 
 const PORT = process.env.SERVER_PORT || 8081;
+const allowedOrigins = (process.env.FRONTEND_BASE_URL || process.env.FRONTEND_URL || "http://localhost:5173")
+    .split(",")
+    .map((o) => o.trim());
 
 const app = express();
 
 // ==========================================
 // CẤU HÌNH CORS
 // ==========================================
-// Cho phép Frontend React (chạy tại port 5173) gửi request đến Backend.
+// Cho phép Frontend React gửi request đến Backend.
 // credentials: true → cho phép gửi cookie/token qua cross-origin request.
 app.use(cors({
-    origin: "http://localhost:" + process.env.FRONTEND_PORT,
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error("Not allowed by CORS"));
+        }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -88,7 +97,7 @@ connectDB().then(() => {
 
     app.listen(PORT, () => {
         console.log(`🚀 Server đang chạy tại: http://localhost:${PORT}`);
-        console.log(`🌐 CORS: Đã cho phép http://localhost:${process.env.FRONTEND_PORT}`);
+        console.log(`🌐 CORS: Đã cho phép [ ${allowedOrigins.join(", ")} ] Truy cập`);
     });
 }).catch((error) => {
     console.error("❌ Không thể khởi động server:", error.message);

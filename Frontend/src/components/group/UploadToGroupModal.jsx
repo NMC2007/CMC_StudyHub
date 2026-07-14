@@ -20,6 +20,7 @@ import CascadeSelect from '#/components/academic/CascadeSelect';
 import { useAuthStore } from '#/stores/useAuthStore';
 import { useUploadGroupDocument } from '#/hooks/useGroups';
 import { uploadDocumentSchema } from '#/utils/validators';
+import { UPLOAD_CONFIG } from '#/config/constants';
 
 const DOCUMENT_TYPE_OPTIONS = [
   { value: 'DOCUMENT', label: 'Tài liệu / Giáo trình' },
@@ -195,7 +196,7 @@ export default function UploadToGroupModal({
         <div>
           <FileDropzone
             label="File tài liệu (*)"
-            helperText="Hỗ trợ .PDF, .DOCX, .PPTX, .ZIP (Tối đa 50MB)"
+            helperText={UPLOAD_CONFIG.DOC.LABEL}
             selectedFile={selectedFile}
             onFileSelect={handleFileSelect}
             error={fileError}

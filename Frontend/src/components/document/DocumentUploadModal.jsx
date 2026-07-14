@@ -23,6 +23,7 @@ import Input from '#/components/ui/Input';
 import Select from '#/components/ui/Select';
 import FileDropzone from '#/components/ui/FileDropzone';
 import CascadeSelect from '#/components/academic/CascadeSelect';
+import { UPLOAD_CONFIG } from '#/config/constants';
 import { useAuthStore } from '#/stores/useAuthStore';
 import { useUploadDocument } from '#/hooks/useDocuments';
 import { uploadDocumentSchema } from '#/utils/validators';
@@ -205,7 +206,7 @@ export default function DocumentUploadModal({
         <div>
           <FileDropzone
             label="File tài liệu (*)"
-            helperText="Hỗ trợ .PDF, .DOCX, .PPTX, .ZIP (Tối đa 50MB)"
+            helperText={UPLOAD_CONFIG.DOC.LABEL}
             selectedFile={selectedFile}
             onFileSelect={handleFileSelect}
             error={fileError}

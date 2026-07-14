@@ -6,6 +6,7 @@
 
 import fs from "fs";
 import path from "path";
+import { UPLOAD_CONFIG } from "#config/constants.js";
 import {
     findUserProfileById,
     findUserByPhoneExcludingId,
@@ -109,7 +110,7 @@ export const updateUserAvatar = async (userId, file) => {
     if (!file) {
         return {
             statusCode: 400,
-            message: "Vui lòng chọn file ảnh hợp lệ (.jpg, .jpeg, .png, .webp, tối đa 5MB).",
+            message: UPLOAD_CONFIG.AVATAR.ERROR_MESSAGE,
             data: null,
             errors: ["Missing Avatar File"],
         };

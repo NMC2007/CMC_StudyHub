@@ -22,13 +22,14 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { formatFileSize } from '#/utils/formatters';
+import { UPLOAD_CONFIG } from '#/config/constants';
 
-const DEFAULT_ACCEPTED_EXTENSIONS = ['.pdf', '.docx', '.pptx', '.zip'];
-const DEFAULT_MAX_SIZE_MB = 50;
+const DEFAULT_ACCEPTED_EXTENSIONS = UPLOAD_CONFIG.DOC.ACCEPTED_EXTENSIONS;
+const DEFAULT_MAX_SIZE_MB = UPLOAD_CONFIG.DOC.MAX_SIZE_MB;
 
 const FileDropzone = ({
   label = 'Chọn file tài liệu',
-  helperText = 'Hỗ trợ định dạng .PDF, .DOCX, .PPTX, .ZIP (Tối đa 50MB)',
+  helperText = UPLOAD_CONFIG.DOC.LABEL,
   accept = DEFAULT_ACCEPTED_EXTENSIONS,
   maxSizeMB = DEFAULT_MAX_SIZE_MB,
   onFileSelect,

@@ -88,11 +88,11 @@ export const formatFileSize = (bytes) => {
  */
 export const getDocumentTypeLabel = (type) => {
   const map = {
-    DOCUMENT:   'Tài liệu',
+    DOCUMENT: 'Tài liệu',
     ASSIGNMENT: 'Bài tập',
-    EXAM:       'Đề thi',
-    SLIDE:      'Slide',
-    REFERENCE:  'Tham khảo',
+    EXAM: 'Đề thi',
+    SLIDE: 'Slide',
+    REFERENCE: 'Tham khảo',
   };
   return map[type] || type;
 };
@@ -105,11 +105,11 @@ export const getDocumentTypeLabel = (type) => {
  */
 export const getFileIconName = (type) => {
   const map = {
-    DOCUMENT:   'FileText',
+    DOCUMENT: 'FileText',
     ASSIGNMENT: 'ClipboardList',
-    EXAM:       'GraduationCap',
-    SLIDE:      'Presentation',
-    REFERENCE:  'BookOpen',
+    EXAM: 'GraduationCap',
+    SLIDE: 'Presentation',
+    REFERENCE: 'BookOpen',
   };
   return map[type] || 'File';
 };
@@ -121,9 +121,9 @@ export const getFileIconName = (type) => {
  */
 export const getVisibilityInfo = (visibility) => {
   const map = {
-    PUBLIC:  { label: 'Công khai',  color: 'text-green-600 bg-green-50' },
-    PRIVATE: { label: 'Riêng tư',   color: 'text-slate-600 bg-slate-100' },
-    GROUP:   { label: 'Nhóm',       color: 'text-blue-600 bg-blue-50' },
+    PUBLIC: { label: 'Công khai', color: 'text-green-600 bg-green-50' },
+    PRIVATE: { label: 'Riêng tư', color: 'text-slate-600 bg-slate-100' },
+    GROUP: { label: 'Nhóm', color: 'text-blue-600 bg-blue-50' },
   };
   return map[visibility] || { label: visibility, color: 'text-slate-600 bg-slate-100' };
 };
@@ -139,9 +139,9 @@ export const getVisibilityInfo = (visibility) => {
  */
 export const getThemeColorByRole = (role) => {
   const themes = {
-    STUDENT:  { primary: '#306bec', light: '#dbeafe', dark: '#1e40af', name: 'student' },
+    STUDENT: { primary: '#306bec', light: '#dbeafe', dark: '#1e40af', name: 'student' },
     LECTURER: { primary: '#22a853', light: '#dcfce7', dark: '#15803d', name: 'lecturer' },
-    ADMIN:    { primary: '#e03c3c', light: '#fee2e2', dark: '#b91c1c', name: 'admin' },
+    ADMIN: { primary: '#e03c3c', light: '#fee2e2', dark: '#b91c1c', name: 'admin' },
   };
   return themes[role] || themes.STUDENT;
 };
@@ -153,9 +153,9 @@ export const getThemeColorByRole = (role) => {
  */
 export const getRoleLabel = (role) => {
   const map = {
-    STUDENT:  'Sinh viên',
+    STUDENT: 'Sinh viên',
     LECTURER: 'Giảng viên',
-    ADMIN:    'Quản trị viên',
+    ADMIN: 'Quản trị viên',
   };
   return map[role] || role;
 };
@@ -186,7 +186,7 @@ export const getAvatarUrl = (avatarPath) => {
   if (!avatarPath) return null;
   if (typeof avatarPath !== 'string') return null;
   if (avatarPath.startsWith('http') || avatarPath.startsWith('data:')) return avatarPath;
-  const origin = import.meta.env.VITE_API_URL?.replace(/\/api\/v1\/?$/, '') || 'http://localhost:8081';
+  const origin = (import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:8081/api/v1').replace(/\/api\/v1\/?$/, '');
   return `${origin}${avatarPath.startsWith('/') ? '' : '/'}${avatarPath}`;
 };
 
@@ -210,6 +210,6 @@ export const getFileUrl = (filePath) => {
   if (!filePath) return null;
   if (typeof filePath !== 'string') return null;
   if (filePath.startsWith('http') || filePath.startsWith('data:')) return filePath;
-  const origin = import.meta.env.VITE_API_URL?.replace(/\/api\/v1\/?$/, '') || 'http://localhost:8081';
+  const origin = (import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:8081/api/v1').replace(/\/api\/v1\/?$/, '');
   return `${origin}${filePath.startsWith('/') ? '' : '/'}${filePath}`;
 };
