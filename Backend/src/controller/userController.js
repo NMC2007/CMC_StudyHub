@@ -85,6 +85,22 @@ export const getAllUsers = async (req, res, next) => {
 };
 
 /**
+ * GET /api/v1/users/search
+ * Tìm kiếm người dùng theo từ khóa q (tên, mã code, email, username, phone)
+ */
+export const searchUsers = async (req, res, next) => {
+    try {
+        const result = await userService.getAllUsers(req.query);
+
+        return res
+            .status(result.statusCode)
+            .json(toAPIResponse(result.statusCode, result.message, result.data, result.errors));
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
  * GET /api/v1/users/:id
  * Lấy thông tin chi tiết của user theo id
  */

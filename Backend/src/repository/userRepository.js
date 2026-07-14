@@ -69,10 +69,10 @@ export const findAllUsersProfile = async (queryParams = {}) => {
         query.andWhere("u.role::text = :role", { role: queryParams.role });
     }
 
-    // Tìm kiếm theo tên, email, username, phone
+    // Tìm kiếm theo tên, mã code, email, username, phone
     if (queryParams.q) {
         query.andWhere(
-            "(unaccent(u.full_name) ILIKE unaccent(:keyword) OR u.email ILIKE :keyword OR u.username ILIKE :keyword OR u.phone ILIKE :keyword)",
+            "(unaccent(u.full_name) ILIKE unaccent(:keyword) OR u.code ILIKE :keyword OR u.email ILIKE :keyword OR u.username ILIKE :keyword OR u.phone ILIKE :keyword)",
             { keyword: `%${queryParams.q}%` }
         );
     }

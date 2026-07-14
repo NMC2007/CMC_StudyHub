@@ -90,3 +90,12 @@ Authorization: Bearer {{accessToken}}
 ### 4.1 Lấy thông tin user có ID = 1
 GET {{baseUrl}}/users/1
 Authorization: Bearer {{accessToken}}
+
+
+### =========================================================================
+### 5. TÌM KIẾM NGƯỜI DÙNG THEO TỪ KHÓA (GET /api/v1/users/search)
+### =========================================================================
+
+### 5.1 Tìm kiếm user theo mã code hoặc tên
+GET {{baseUrl}}/users/search?q=BIT250052
+Authorization: Bearer {{accessToken}}

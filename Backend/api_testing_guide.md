@@ -84,7 +84,7 @@ _(Lưu ý: Bắt đầu từ đây, mọi API yêu cầu đính kèm Header: `Au
   - `page`: Trang hiện tại (Mặc định: 1).
   - `limit`: Số lượng mỗi trang (Mặc định: 20, tối đa 100).
   - `role`: Lọc theo quyền `ALL` / `STUDENT` / `LECTURER` / `ADMIN` (Mặc định: `ALL`).
-  - `q`: Từ khóa tìm kiếm theo Tên, Email, Username, SĐT.
+  - `q`: Từ khóa tìm kiếm theo Tên, Mã code (code), Email, Username, SĐT.
 - **Mô tả:** Trả về danh sách tài khoản trong hệ thống kèm đối tượng `pagination` (phục vụ Admin Panel).
 - **Response mẫu:**
   ```json
@@ -112,14 +112,25 @@ _(Lưu ý: Bắt đầu từ đây, mọi API yêu cầu đính kèm Header: `Au
   }
   ```
 
-### 2.3. Lấy thông tin chi tiết người dùng theo ID
+### 2.3. Tìm kiếm người dùng theo từ khóa (Tên / Mã code)
+
+- **Endpoint:** `GET /users/search`
+- **Quyền:** Mọi User đăng nhập
+- **Query Parameters:**
+  - `q`: Từ khóa cần tìm kiếm (Tên, Mã code `BIT250052`, Email, Username, SĐT).
+  - `page`: Trang hiện tại (Mặc định: 1).
+  - `limit`: Số lượng mỗi trang (Mặc định: 20).
+- **Mô tả:** API chuyên dụng cho việc tìm kiếm người dùng (ví dụ gõ mã code hoặc tên vào ô search trên giao diện).
+- **Response mẫu:** Tương tự như danh sách trong API `GET /users`.
+
+### 2.4. Lấy thông tin chi tiết người dùng theo ID
 
 - **Endpoint:** `GET /users/:id`
 - **Quyền:** Mọi User đăng nhập
 - **Mô tả:** Trả về thông tin chi tiết của một người dùng dựa theo ID (sử dụng khi muốn xem trang thông tin cá nhân của người khác).
 - **Response mẫu:** Tương tự như đối tượng user trong API Lấy thông tin cá nhân.
 
-### 2.4. Cập nhật thông tin cá nhân
+### 2.5. Cập nhật thông tin cá nhân
 
 - **Endpoint:** `PUT /users/profile`
 - **Body (`application/json`):**
@@ -131,7 +142,7 @@ _(Lưu ý: Bắt đầu từ đây, mọi API yêu cầu đính kèm Header: `Au
   }
   ```
 
-### 2.4. Cập nhật Avatar
+### 2.6. Cập nhật Avatar
 
 - **Endpoint:** `PUT /users/avatar`
 - **Quyền:** Mọi User đăng nhập

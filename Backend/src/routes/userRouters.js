@@ -7,7 +7,7 @@
  */
 
 import express from "express";
-import { getProfile, updateProfile, updateAvatar, getAllUsers, getUserById } from "#controller/userController.js";
+import { getProfile, updateProfile, updateAvatar, getAllUsers, searchUsers, getUserById } from "#controller/userController.js";
 import { jwtFilter } from "#config/security/jwtFilter.js";
 import { rbac } from "#config/security/rbacMiddleware.js";
 import { uploadAvatar } from "#config/security/uploadMiddleware.js";
@@ -36,6 +36,11 @@ userRouter.put("/avatar", uploadAvatar.single("avatar"), updateAvatar);
 // @desc   Lấy danh sách toàn bộ người dùng
 // @access Private (Mọi User)
 userRouter.get("/", getAllUsers);
+
+// @route  GET /api/v1/users/search
+// @desc   Tìm kiếm người dùng theo tên, mã code, email, username, sđt
+// @access Private (Mọi User)
+userRouter.get("/search", searchUsers);
 
 // @route  GET /api/v1/users/:id
 // @desc   Lấy thông tin chi tiết của user theo id
