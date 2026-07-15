@@ -66,6 +66,7 @@ CREATE TABLE users (
                        id SERIAL PRIMARY KEY,
                        full_name VARCHAR(100) NOT NULL,
                        username VARCHAR(50) UNIQUE NOT NULL,
+                       code VARCHAR(20) UNIQUE NOT NULL,
                        email VARCHAR(100) UNIQUE NOT NULL,
                        phone VARCHAR(20) UNIQUE,
                        dob DATE,
@@ -89,6 +90,17 @@ CREATE TABLE refresh_tokens (
                                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Bảng OTP Verifications (Xác thực OTP qua email)
+CREATE TABLE otp_verifications (
+                                   id SERIAL PRIMARY KEY,
+                                   email VARCHAR(100) NOT NULL,
+                                   otp_code VARCHAR(6) NOT NULL,
+                                   expires_at TIMESTAMP NOT NULL,
+                                   is_used BOOLEAN NOT NULL DEFAULT FALSE,
+                                   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IDX_OTP_EMAIL ON otp_verifications (email);
+
 -- ==========================================
 -- 4. TẠO BẢNG TÀI LIỆU
 -- ==========================================
@@ -109,6 +121,7 @@ CREATE TABLE documents (
                            file_type VARCHAR(50),
                            download_count INT DEFAULT 0,
                            like_count INT DEFAULT 0,
+                           view_count INT DEFAULT 0,
                            is_deleted BOOLEAN DEFAULT FALSE,
                            deleted_at TIMESTAMP,
                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -134,6 +147,15 @@ CREATE TABLE group_members (
                                user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                                joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                                PRIMARY KEY (group_id, user_id)
+);
+
+-- Bảng Tài liệu chia sẻ trong nhóm
+CREATE TABLE group_documents (
+                                 group_id INT NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+                                 document_id INT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+                                 shared_by_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                                 shared_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                 PRIMARY KEY (group_id, document_id)
 );
 
 -- ==========================================
@@ -223,8 +245,9 @@ ON CONFLICT (code) DO NOTHING;
 -- -- SEED DATA: ADMIN USER
 -- -- ==========================================
 -- -- Mật khẩu: Admin@121234 (đã hash qua bcrypt 10 salt rounds)
--- INSERT INTO users (full_name, username, email, dob, password_hash, role, status)
+-- INSERT INTO users (code, full_name, username, email, dob, password_hash, role, status)
 -- VALUES (
+--     'ADMIN01',
 --     'Nguyễn Mạnh Cường',
 --     'nmcDev',
 --     'manhcuong281207@gmail.com',
