@@ -32,7 +32,7 @@ import { errorHandler } from "./advice/errorHandler.js";
 dotenv.config();
 
 const PORT = process.env.SERVER_PORT || 8081;
-const allowedOrigins = (process.env.FRONTEND_BASE_URL || process.env.FRONTEND_URL || "http://localhost:5173")
+const allowedOrigins = (process.env.FRONTEND_BASE_URL || "http://localhost:5173")
     .split(",")
     .map((o) => o.trim());
 

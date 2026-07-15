@@ -6,12 +6,14 @@
  * Khi chạy trong chế độ React Strict Mode (dev) hoặc có nhiều yêu cầu khôi phục đồng thời,
  * chỉ duy nhất 1 request /auth/refresh được gửi lên Server (tránh lỗi 401 do Token Rotation).
  */
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { RouterProvider } from "react-router";
 import axios from "axios";
 import router from "#/router/index";
 import { useAuthStore } from "#/stores/useAuthStore";
 import { getProfile } from "#/api/userApi";
+import ErrorBoundary from "#/components/layout/ErrorBoundary";
+import PageLoader from "#/components/layout/PageLoader";
 
 const BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8081/api/v1";
@@ -56,7 +58,9 @@ export default function App() {
                 const profileRes = await getProfile();
                 user = profileRes.data?.data?.user || profileRes.data?.data;
               } catch (profileErr) {
-                console.warn("Không thể tải thông tin profile:", profileErr);
+                if (import.meta.env.DEV) {
+                  console.warn("Không thể tải thông tin profile:", profileErr);
+                }
               }
             }
 
@@ -94,17 +98,14 @@ export default function App() {
 
   // Hiển thị màn hình chờ trong lúc khôi phục session để tránh nhấp nháy giao diện (flicker/redirect)
   if (isRestoring) {
-    return (
-      <div className="min-h-screen bg-surface flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-4 border-brand-student border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-text-secondary font-medium">
-            Đang khôi phục phiên làm việc...
-          </p>
-        </div>
-      </div>
-    );
+    return <PageLoader message="Đang khôi phục phiên làm việc..." />;
   }
 
-  return <RouterProvider router={router} />;
+  return (
+    <ErrorBoundary>
+      <Suspense fallback={<PageLoader />}>
+        <RouterProvider router={router} />
+      </Suspense>
+    </ErrorBoundary>
+  );
 }

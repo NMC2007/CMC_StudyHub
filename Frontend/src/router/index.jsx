@@ -11,48 +11,54 @@
  *
  * Dễ mở rộng: Thêm route mới chỉ cần bổ sung object vào đúng nhóm.
  *
+ * Code Splitting: 100% Page components được lazy loaded bằng React.lazy().
+ *   Suspense boundary được đặt tại AppLayout (Outlet level) và App.jsx (root level).
+ *   → Bundle ban đầu chỉ chứa core runtime, mỗi trang chỉ tải khi user điều hướng đến.
+ *
  * Tuân thủ: STUDYHUB_FE.md mục 6 (Routing & Route Guards).
  */
-import React from 'react';
-import { createBrowserRouter } from 'react-router';
+import React from "react";
+import { createBrowserRouter } from "react-router";
 
-import { useAuthStore } from '#/stores/useAuthStore';
+import { useAuthStore } from "#/stores/useAuthStore";
 
 // ── Layout ──
-import AppLayout from '#/components/layout/AppLayout';
+import AppLayout from "#/components/layout/AppLayout";
 
 // ── Route Guards ──
-import ProtectedRoute from '#/router/ProtectedRoute';
-import RbacRoute from '#/router/RbacRoute';
-import RoleBasedDashboard from '#/router/RoleBasedDashboard';
+import ProtectedRoute from "#/router/ProtectedRoute";
+import RbacRoute from "#/router/RbacRoute";
+import RoleBasedDashboard from "#/router/RoleBasedDashboard";
 
-// ── Auth Pages ──
-import LoginPage from '#/pages/auth/LoginPage';
-import RegisterPage from '#/pages/auth/RegisterPage';
-import NotFoundPage from '#/pages/NotFoundPage';
+// ── Auth Pages (Lazy Loaded) ──
+const LoginPage = React.lazy(() => import("#/pages/auth/LoginPage"));
+const RegisterPage = React.lazy(() => import("#/pages/auth/RegisterPage"));
+const NotFoundPage = React.lazy(() => import("#/pages/NotFoundPage"));
 
-// ── Dashboard Placeholders ──
-import AdminDashboard from '#/pages/admin/AdminDashboard';
+// ── Dashboard Placeholders (Lazy Loaded) ──
+const AdminDashboard = React.lazy(() => import("#/pages/admin/AdminDashboard"));
 
 // ── Phase 5 Shared Pages (Lazy Loaded) ──
-const DocumentsPage = React.lazy(() => import('#/pages/shared/DocumentsPage'));
-const SearchPage = React.lazy(() => import('#/pages/shared/SearchPage'));
-const FavoritesPage = React.lazy(() => import('#/pages/shared/FavoritesPage'));
-const GroupsPage = React.lazy(() => import('#/pages/shared/GroupsPage'));
-const GroupDetailPage = React.lazy(() => import('#/pages/shared/GroupDetailPage'));
-const ProfilePage = React.lazy(() => import('#/pages/shared/ProfilePage'));
+const DocumentsPage = React.lazy(() => import("#/pages/shared/DocumentsPage"));
+const SearchPage = React.lazy(() => import("#/pages/shared/SearchPage"));
+const FavoritesPage = React.lazy(() => import("#/pages/shared/FavoritesPage"));
+const GroupsPage = React.lazy(() => import("#/pages/shared/GroupsPage"));
+const GroupDetailPage = React.lazy(
+  () => import("#/pages/shared/GroupDetailPage"),
+);
+const ProfilePage = React.lazy(() => import("#/pages/shared/ProfilePage"));
 
 // ── Phase 6 Admin Pages (Lazy Loaded) ──
-const UsersPage = React.lazy(() => import('#/pages/admin/UsersPage'));
-const AcademicPage = React.lazy(() => import('#/pages/admin/AcademicPage'));
-const CronPage = React.lazy(() => import('#/pages/admin/CronPage'));
+const UsersPage = React.lazy(() => import("#/pages/admin/UsersPage"));
+const AcademicPage = React.lazy(() => import("#/pages/admin/AcademicPage"));
+const CronPage = React.lazy(() => import("#/pages/admin/CronPage"));
 
 // ─── Loader: Chặn user đã đăng nhập truy cập Login/Register ──────────────────
 // Nếu đã authenticated → redirect về "/" thay vì hiển thị trang Login/Register.
 const redirectIfAuth = () => {
   const { isAuthenticated } = useAuthStore.getState();
   if (isAuthenticated) {
-    return Response.redirect(new URL('/', window.location.origin), 302);
+    return Response.redirect(new URL("/", window.location.origin), 302);
   }
   return null;
 };
@@ -64,12 +70,12 @@ const router = createBrowserRouter([
   // 1. PUBLIC ROUTES — Không cần đăng nhập
   // ════════════════════════════════════════════════════════════════════════════
   {
-    path: '/login',
+    path: "/login",
     element: <LoginPage />,
     loader: redirectIfAuth,
   },
   {
-    path: '/register',
+    path: "/register",
     element: <RegisterPage />,
     loader: redirectIfAuth,
   },
@@ -86,24 +92,24 @@ const router = createBrowserRouter([
         children: [
           // ── 2a. SHARED ROUTES (Student & Lecturer) ──
           {
-            path: '/',
+            path: "/",
             element: <RoleBasedDashboard />,
           },
-          { path: '/documents', element: <DocumentsPage /> },
-          { path: '/search', element: <SearchPage /> },
-          { path: '/favorites', element: <FavoritesPage /> },
-          { path: '/groups', element: <GroupsPage /> },
-          { path: '/groups/:id', element: <GroupDetailPage /> },
-          { path: '/profile', element: <ProfilePage /> },
+          { path: "/documents", element: <DocumentsPage /> },
+          { path: "/search", element: <SearchPage /> },
+          { path: "/favorites", element: <FavoritesPage /> },
+          { path: "/groups", element: <GroupsPage /> },
+          { path: "/groups/:id", element: <GroupDetailPage /> },
+          { path: "/profile", element: <ProfilePage /> },
 
           // ── 2b. ADMIN ROUTES — Chỉ dành cho ADMIN ──
           {
-            element: <RbacRoute allowedRoles={['ADMIN']} />,
+            element: <RbacRoute allowedRoles={["ADMIN"]} />,
             children: [
-              { path: '/admin/dashboard', element: <AdminDashboard /> },
-              { path: '/admin/users', element: <UsersPage /> },
-              { path: '/admin/academic', element: <AcademicPage /> },
-              { path: '/admin/cron', element: <CronPage /> },
+              { path: "/admin/dashboard", element: <AdminDashboard /> },
+              { path: "/admin/users", element: <UsersPage /> },
+              { path: "/admin/academic", element: <AcademicPage /> },
+              { path: "/admin/cron", element: <CronPage /> },
             ],
           },
         ],
@@ -115,7 +121,7 @@ const router = createBrowserRouter([
   // 3. CATCH-ALL — URL không tồn tại
   // ════════════════════════════════════════════════════════════════════════════
   {
-    path: '*',
+    path: "*",
     element: <NotFoundPage />,
   },
 ]);

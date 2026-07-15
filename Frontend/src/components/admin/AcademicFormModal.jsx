@@ -18,8 +18,10 @@ export default function AcademicFormModal({
   initialData = null,
   parentFilterId = null, // facultyId cho Major, hoặc majorId cho Subject
   onSubmit,
+  loading = false,
   isLoading = false,
 }) {
+  const isModalLoading = loading || isLoading;
   const { facultiesQuery } = useAdminFaculties();
   // Load toàn bộ ngành học (không filter theo khoa) để Subject multi-select dùng
   const { majorsQuery } = useAdminMajors(null);
@@ -490,11 +492,11 @@ export default function AcademicFormModal({
             type="button"
             variant="ghost"
             onClick={onClose}
-            disabled={isLoading}
+            disabled={isModalLoading}
           >
             Hủy bỏ
           </Button>
-          <Button type="submit" loading={isLoading}>
+          <Button type="submit" loading={isModalLoading}>
             {mode === "edit" ? "Cập nhật" : "Tạo mới"}
           </Button>
         </div>

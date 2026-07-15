@@ -22,7 +22,7 @@ export const loginSchema = z.object({
 
 /**
  * Schema cho Step 1 của RegisterPage.
- * Validation password: phải có ít nhất 1 chữ hoa và 1 số.
+ * Validation password: phải có tối thiểu 6 ký tự, ít nhất 1 chữ hoa, 1 số và 1 ký tự đặc biệt (đồng bộ với BE).
  */
 export const registerStep1Schema = z.object({
   full_name: z
@@ -57,9 +57,10 @@ export const registerStep1Schema = z.object({
     }, 'Ngày sinh không hợp lệ (tuổi phải từ 15 đến 100)'),
   password: z
     .string()
-    .min(8, 'Mật khẩu phải có ít nhất 8 ký tự')
-    .regex(/[A-Z]/, 'Mật khẩu phải chứa ít nhất 1 chữ hoa')
-    .regex(/[0-9]/, 'Mật khẩu phải chứa ít nhất 1 chữ số'),
+    .min(6, 'Mật khẩu phải có tối thiểu 6 ký tự')
+    .regex(/[A-Z]/, 'Mật khẩu phải có ít nhất 1 chữ cái in hoa')
+    .regex(/[0-9]/, 'Mật khẩu phải có ít nhất 1 chữ số')
+    .regex(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/, 'Mật khẩu phải có ít nhất 1 ký tự đặc biệt (VD: !@#$%^&*)'),
   confirm_password: z
     .string()
     .min(1, 'Vui lòng xác nhận lại mật khẩu'),

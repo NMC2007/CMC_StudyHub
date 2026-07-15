@@ -12,10 +12,12 @@
  *
  * Tuân thủ: STUDYHUB_FE.md mục 9 (Dashboard theo Role).
  */
+import React from 'react';
 import { Navigate } from 'react-router';
 import { useAuthStore } from '#/stores/useAuthStore';
-import StudentDashboard from '#/pages/student/StudentDashboard';
-import LecturerDashboard from '#/pages/lecturer/LecturerDashboard';
+
+const StudentDashboard = React.lazy(() => import('#/pages/student/StudentDashboard'));
+const LecturerDashboard = React.lazy(() => import('#/pages/lecturer/LecturerDashboard'));
 
 export default function RoleBasedDashboard() {
   const role = useAuthStore((s) => s.role);

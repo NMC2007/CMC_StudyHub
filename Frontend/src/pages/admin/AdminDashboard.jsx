@@ -130,7 +130,7 @@ export default function AdminDashboard() {
           icon={UsersIcon}
           label="Tổng Người dùng"
           value={stats?.total_users}
-          isLoading={statsLoading}
+          loading={statsLoading}
           color="text-brand-admin"
           bgColor="bg-brand-admin/10"
           linkTo="/admin/users"
@@ -139,7 +139,7 @@ export default function AdminDashboard() {
           icon={FileText}
           label="Tổng Tài liệu"
           value={stats?.total_documents}
-          isLoading={statsLoading}
+          loading={statsLoading}
           color="text-blue-600"
           bgColor="bg-blue-50"
           linkTo="/documents"
@@ -148,7 +148,7 @@ export default function AdminDashboard() {
           icon={Users}
           label="Tổng Nhóm học"
           value={stats?.total_groups}
-          isLoading={statsLoading}
+          loading={statsLoading}
           color="text-emerald-600"
           bgColor="bg-emerald-50"
           linkTo="/groups"
@@ -157,7 +157,7 @@ export default function AdminDashboard() {
           icon={Eye}
           label="Tổng Lượt xem"
           value={stats?.total_views}
-          isLoading={statsLoading}
+          loading={statsLoading}
           color="text-amber-600"
           bgColor="bg-amber-50"
         />
@@ -417,11 +417,13 @@ function StatCard({
   icon: Icon,
   label,
   value,
-  isLoading,
+  loading = false,
+  isLoading = false,
   color,
   bgColor,
   linkTo,
 }) {
+  const isCardLoading = loading || isLoading;
   const content = (
     <div className="bg-card rounded-2xl p-5 border border-border shadow-2xs hover:shadow-md transition-all flex items-center gap-4 group">
       <div
@@ -430,7 +432,7 @@ function StatCard({
         <Icon className={`w-6 h-6 ${color}`} />
       </div>
       <div className="overflow-hidden">
-        {isLoading ? (
+        {isCardLoading ? (
           <Skeleton className="h-7 w-16 mb-1 rounded-md" />
         ) : (
           <p className="text-2xl font-extrabold text-text-primary tracking-tight">

@@ -370,7 +370,7 @@ export default function AcademicPage() {
         initialData={formModal.data}
         parentFilterId={formModal.parentFilterId}
         onSubmit={handleFormSubmit}
-        isLoading={
+        loading={
           cohortsHook.createMutation.isPending ||
           cohortsHook.updateMutation.isPending ||
           facultiesHook.createMutation.isPending ||

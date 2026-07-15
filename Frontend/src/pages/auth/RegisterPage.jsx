@@ -140,7 +140,7 @@ export default function RegisterPage() {
                     // Ưu tiên mảng errors chi tiết từ server, nếu không có mới dùng message
                     const errorList = errors.length > 0 ? errors : [message];
 
-                    // Kiểm tra lỗi 400 hoặc 409 (Conflict - Trùng lặp email/username/phone)
+                    // Kiểm tra lỗi 400 hoặc 409 (Conflict - Trùng lặp email/username/phone/password...)
                     if ([400, 409].includes(status) && errorList.length > 0) {
                       let hasStep1Error = false;
                       const setError = step1SetErrorRef.current;
@@ -170,6 +170,34 @@ export default function RegisterPage() {
                           }
                           if (/phone|điện thoại|số điện thoại/i.test(msg)) {
                             setError("phone", { type: "manual", message: msg });
+                            hasStep1Error = true;
+                          }
+                          if (/password|mật khẩu/i.test(msg)) {
+                            setError("password", {
+                              type: "manual",
+                              message: msg,
+                            });
+                            hasStep1Error = true;
+                          }
+                          if (/full_name|họ và tên|họ tên/i.test(msg)) {
+                            setError("full_name", {
+                              type: "manual",
+                              message: msg,
+                            });
+                            hasStep1Error = true;
+                          }
+                          if (/dob|ngày sinh/i.test(msg)) {
+                            setError("dob", {
+                              type: "manual",
+                              message: msg,
+                            });
+                            hasStep1Error = true;
+                          }
+                          if (/role|vai trò/i.test(msg)) {
+                            setError("role", {
+                              type: "manual",
+                              message: msg,
+                            });
                             hasStep1Error = true;
                           }
                         });
@@ -383,7 +411,7 @@ function Step1Form({
       {/* Password */}
       <Input
         label="Mật khẩu"
-        placeholder="Ít nhất 8 ký tự, 1 chữ hoa, 1 số"
+        placeholder="Tối thiểu 6 ký tự, 1 hoa, 1 số, 1 ký tự đặc biệt"
         type={showPassword ? "text" : "password"}
         icon={Lock}
         required
