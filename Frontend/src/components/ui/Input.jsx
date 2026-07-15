@@ -38,7 +38,7 @@ const Input = forwardRef(
 
     // Base styling cho thẻ input
     const baseInputStyles =
-      'w-full px-3.5 py-2 text-sm text-slate-800 bg-white border rounded-xl transition-all duration-200 outline-none disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed placeholder:text-slate-400';
+      'w-full px-3.5 py-2 text-sm text-slate-800 bg-white border rounded-xl transition-all duration-200 outline-none disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed read-only:bg-slate-50 read-only:cursor-not-allowed read-only:text-slate-500 placeholder:text-slate-400';
 
     // Styling theo trạng thái Lỗi / Bình thường
     const stateStyles = errorMessage

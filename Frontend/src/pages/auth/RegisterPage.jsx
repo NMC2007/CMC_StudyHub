@@ -288,6 +288,7 @@ function Step1Form({
     setValue,
     setError,
     clearErrors,
+    trigger,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(registerStep1Schema),
@@ -310,16 +311,23 @@ function Step1Form({
   }, [onSetErrorReady, setError]);
 
   const codeValue = watch("code");
+  const selectedRole = watch("role");
   const prevCodeRef = useRef(defaultValues?.code || "");
+  const prevRoleRef = useRef(defaultValues?.role || "");
 
-  // Tự động điền/cập nhật email khi nhập mã code theo định dạng code@st.cmcu.edu.vn
+  // Tự động điền email theo code + role, và khóa ô email
   useEffect(() => {
-    if (codeValue === prevCodeRef.current) return;
+    const codeChanged = codeValue !== prevCodeRef.current;
+    const roleChanged = selectedRole !== prevRoleRef.current;
+    if (!codeChanged && !roleChanged) return;
     prevCodeRef.current = codeValue;
+    prevRoleRef.current = selectedRole;
 
-    if (codeValue !== undefined && codeValue.trim().length > 0) {
+    if (codeValue !== undefined && codeValue.trim().length > 0 && selectedRole) {
       const cleanCode = codeValue.trim().toLowerCase();
-      setValue("email", `${cleanCode}@st.cmcu.edu.vn`, {
+      const domain =
+        selectedRole === "LECTURER" ? "@cmcu.edu.vn" : "@st.cmcu.edu.vn";
+      setValue("email", `${cleanCode}${domain}`, {
         shouldValidate: true,
         shouldDirty: true,
       });
@@ -330,9 +338,34 @@ function Step1Form({
       });
       clearErrors("email");
     }
-  }, [codeValue, setValue, clearErrors]);
+  }, [codeValue, selectedRole, setValue, clearErrors]);
 
-  const selectedRole = watch("role");
+  // Khi đổi role, trigger lại validate ô code để cập nhật thông báo lỗi đúng định dạng
+  useEffect(() => {
+    if (codeValue && codeValue.trim().length > 0) {
+      trigger("code");
+    }
+  }, [selectedRole, trigger, codeValue]);
+
+  // Xác định placeholder và helper text của ô Code theo role
+  const codeConfig = (() => {
+    if (selectedRole === "STUDENT") {
+      return {
+        placeholder: "VD: BIT250052",
+        helperText: "3 chữ cái mã ngành + 2 số khóa + 3-5 số STT",
+      };
+    }
+    if (selectedRole === "LECTURER") {
+      return {
+        placeholder: "VD: NTSon, IT_GV01",
+        helperText: "Tên viết tắt hoặc mã cán bộ (3-15 ký tự)",
+      };
+    }
+    return {
+      placeholder: "Chọn vai trò trước",
+      helperText: "Mã sinh viên hoặc mã giảng viên của bạn",
+    };
+  })();
 
   return (
     <form onSubmit={handleSubmit(onNext)} className="flex flex-col gap-3.5">
@@ -359,30 +392,88 @@ function Step1Form({
         {...register("username")}
       />
 
-      {/* Code (MSSV/MSGV) */}
-      <Input
-        label="Mã định danh (MSSV/MSGV)"
-        placeholder="Ví dụ: BIT250052"
-        icon={Hash}
-        required
-        autoComplete="off"
-        helperText="Mã sinh viên hoặc mã giảng viên của bạn"
-        error={errors.code}
-        {...register("code", {
-          onChange: (e) => {
-            e.target.value = e.target.value.toUpperCase();
-          },
-        })}
-      />
+      {/* Role selector — đặt TRÊN ô Code để người dùng chọn vai trò trước */}
+      <div className="flex flex-col gap-1.5">
+        <span className="text-xs font-semibold text-slate-700 flex items-center gap-1">
+          Vai trò <span className="text-red-500 font-bold">*</span>
+        </span>
+        <div className="grid grid-cols-2 gap-3">
+          <RoleCard
+            role="STUDENT"
+            icon={GraduationCap}
+            label="Sinh viên"
+            description="Upload theo Khóa/Khoa/Ngành"
+            isSelected={selectedRole === "STUDENT"}
+            {...register("role")}
+          />
+          <RoleCard
+            role="LECTURER"
+            icon={BookOpen}
+            label="Giảng viên"
+            description="Upload không giới hạn"
+            isSelected={selectedRole === "LECTURER"}
+            {...register("role")}
+          />
+        </div>
+        {errors.role && (
+          <p className="text-xs text-red-500 font-medium mt-0.5">
+            {errors.role.message}
+          </p>
+        )}
+      </div>
 
-      {/* Email */}
+      {/* Code (MSSV/MSGV) — sau khi chọn Role mới nhập */}
+      <div className="flex flex-col gap-1">
+        <Input
+          label="Mã định danh (MSSV/MSGV)"
+          placeholder={codeConfig.placeholder}
+          icon={Hash}
+          required
+          autoComplete="off"
+          disabled={!selectedRole}
+          helperText={codeConfig.helperText}
+          error={errors.code}
+          {...register("code", {
+            onChange: (e) => {
+              // Sinh viên: tự động viết hoa toàn bộ; Giảng viên: giữ nguyên case
+              if (selectedRole === "STUDENT") {
+                e.target.value = e.target.value.toUpperCase();
+              }
+            },
+          })}
+        />
+        {/* Banner lưu ý quan trọng */}
+        {selectedRole && (
+          <div className="flex items-start gap-2 mt-1 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+            <span className="text-amber-500 mt-0.5 shrink-0" aria-hidden>
+              ⚠️
+            </span>
+            <p className="text-xs text-amber-700 leading-relaxed">
+              <span className="font-semibold">Lưu ý quan trọng:</span> Mã định danh bạn nhập sẽ được dùng để tạo{" "}
+              <span className="font-mono font-semibold">
+                {selectedRole === "LECTURER" ? "@cmcu.edu.vn" : "@st.cmcu.edu.vn"}
+              </span>
+              . Vui lòng nhập <span className="font-semibold">chính xác</span> mã của bạn để đảm bảo nhận được mã xác thực khi kích hoạt tài khoản.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Email — readOnly, tự động điền theo code + role */}
       <Input
         label="Email"
-        placeholder="email@example.com"
+        placeholder={selectedRole ? "Tự động điền sau khi nhập mã" : "email@example.com"}
         type="email"
         icon={Mail}
         required
         autoComplete="email"
+        readOnly
+        className="bg-slate-50 cursor-not-allowed opacity-80"
+        helperText={
+          selectedRole
+            ? `Email được tạo tự động từ mã định danh của bạn`
+            : undefined
+        }
         error={errors.email}
         {...register("email")}
       />
@@ -461,36 +552,6 @@ function Step1Form({
         }
         {...register("confirm_password")}
       />
-
-      {/* Role selector */}
-      <div className="flex flex-col gap-1.5">
-        <span className="text-xs font-semibold text-slate-700 flex items-center gap-1">
-          Vai trò <span className="text-red-500 font-bold">*</span>
-        </span>
-        <div className="grid grid-cols-2 gap-3">
-          <RoleCard
-            role="STUDENT"
-            icon={GraduationCap}
-            label="Sinh viên"
-            description="Upload theo Khóa/Khoa/Ngành"
-            isSelected={selectedRole === "STUDENT"}
-            {...register("role")}
-          />
-          <RoleCard
-            role="LECTURER"
-            icon={BookOpen}
-            label="Giảng viên"
-            description="Upload không giới hạn"
-            isSelected={selectedRole === "LECTURER"}
-            {...register("role")}
-          />
-        </div>
-        {errors.role && (
-          <p className="text-xs text-red-500 font-medium mt-0.5">
-            {errors.role.message}
-          </p>
-        )}
-      </div>
 
       {/* Next step button */}
       <Button type="submit" icon={ArrowRight} className="w-full mt-2" size="lg">

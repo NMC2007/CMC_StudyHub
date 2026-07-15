@@ -12,20 +12,41 @@ Tài liệu này tổng hợp toàn bộ các API đang được cung cấp bở
 
 - **Endpoint:** `POST /auth/register`
 - **Quyền (Access):** Public
-- **Body (`application/json`):**
+- **Quy định Mã định danh (`code`) theo vai trò:**
+  - `STUDENT`: Đúng chuẩn `^[A-Z]{3}[0-9]{5,7}$` — 3 chữ cái in hoa (mã ngành) + 5-7 chữ số (khóa + STT). VD: `BIT250052`.
+  - `LECTURER`: Linh hoạt `^[A-Z][A-Za-z0-9._-]{2,14}$` — tên viết tắt hoặc mã cán bộ, bắt đầu bằng chữ in hoa, 3-15 ký tự. VD: `NTSon`, `IT_GV01`.
+  - `ADMIN`: Bắt đầu bằng `AD` + chữ/số, 6-15 ký tự. VD: `ADMIN01`.
+- **Quy định Email theo vai trò:**
+  - `STUDENT`: `{code}@st.cmcu.edu.vn` (VD: `bit250052@st.cmcu.edu.vn`)
+  - `LECTURER`: `{code}@cmcu.edu.vn` (VD: `ntson@cmcu.edu.vn`)
+- **Body (`application/json`) — Sinh viên:**
   ```json
   {
     "code": "BIT250052",
     "full_name": "Nguyễn Văn A",
     "username": "nva2004",
-    "email": "nva@studyhub.edu.vn",
+    "email": "bit250052@st.cmcu.edu.vn",
     "phone": "0912345678",
     "dob": "2004-05-20",
     "password": "Password@123",
     "role": "STUDENT",
-    "cohort_code": "K1", // Bắt buộc nếu là STUDENT
-    "faculty_code": "CNTT", // Bắt buộc nếu là STUDENT/LECTURER
-    "major_code": "BIT" // Bắt buộc nếu là STUDENT
+    "cohort_code": "K1",
+    "faculty_code": "CNTT",
+    "major_code": "BIT"
+  }
+  ```
+- **Body (`application/json`) — Giảng viên:**
+  ```json
+  {
+    "code": "NTSon",
+    "full_name": "Nguyễn Thị Sơn",
+    "username": "ntson_gv",
+    "email": "ntson@cmcu.edu.vn",
+    "phone": "0987654321",
+    "dob": "1988-11-12",
+    "password": "Giangvien@123",
+    "role": "LECTURER",
+    "faculty_code": "CNTT"
   }
   ```
   _(Ghi chú: Nếu `role` là `LECTURER`, chỉ cần cung cấp `faculty_code`)_

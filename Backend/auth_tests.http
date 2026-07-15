@@ -75,15 +75,15 @@ Content-Type: {{contentType}}
   "major_code": "BAI"
 }
 
-### 1.4 Đăng ký giảng viên hợp lệ (LECTURER - CNTT)
+### 1.4 Đăng ký giảng viên hợp lệ - mã dạng tên viết tắt (LECTURER - CNTT)
 POST {{baseUrl}}/register
 Content-Type: {{contentType}}
 
 {
-  "code": "IT123456",
-  "full_name": "Trần Thị Giảng Viên",
-  "username": "giangvienit",
-  "email": "giangvienit@studyhub.edu.vn",
+  "code": "NKSon",
+  "full_name": "Nguyễn Khánh Sơn",
+  "username": "ntson_gv",
+  "email": "ntson@cmcu.edu.vn",
   "phone": "0987654321",
   "dob": "1988-11-12",
   "password": "Giangvien@123",
@@ -91,7 +91,41 @@ Content-Type: {{contentType}}
   "faculty_code": "CNTT"
 }
 
-### 1.3 Đăng ký không hợp lệ - Thiếu thông tin bắt buộc cho STUDENT (Thiếu cohort_code)
+### 1.5 Đăng ký giảng viên hợp lệ - mã dạng mã cán bộ (LECTURER - CNTT)
+POST {{baseUrl}}/register
+Content-Type: {{contentType}}
+
+{
+  "code": "IT_GV01",
+  "full_name": "Trần Văn Giảng Viên",
+  "username": "giangvienit2",
+  "email": "it_gv01@cmcu.edu.vn",
+  "phone": "0987654322",
+  "dob": "1985-05-01",
+  "password": "Giangvien@123",
+  "role": "LECTURER",
+  "faculty_code": "CNTT"
+}
+
+### 1.6 Đăng ký không hợp lệ - Sai định dạng mã Sinh viên (thiếu chữ số năm + STT)
+POST {{baseUrl}}/register
+Content-Type: {{contentType}}
+
+{
+  "code": "BIT01",
+  "full_name": "Test Sai Mã SV",
+  "username": "testsaimav",
+  "email": "bit01@st.cmcu.edu.vn",
+  "phone": "0911111111",
+  "dob": "2004-01-01",
+  "password": "Test@1234",
+  "role": "STUDENT",
+  "cohort_code": "K1",
+  "faculty_code": "CNTT",
+  "major_code": "BIT"
+}
+
+### 1.7 Đăng ký không hợp lệ - Thiếu thông tin bắt buộc cho STUDENT (Thiếu cohort_code)
 POST {{baseUrl}}/register
 Content-Type: {{contentType}}
 
@@ -99,7 +133,7 @@ Content-Type: {{contentType}}
   "code": "BIT250054",
   "full_name": "Lê Văn Lỗi",
   "username": "sinhvienloi",
-  "email": "sinhvienloi@studyhub.edu.vn",
+  "email": "bit250054@st.cmcu.edu.vn",
   "dob": "2004-09-30",
   "password": "Password@123",
   "role": "STUDENT",

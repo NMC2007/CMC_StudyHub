@@ -165,10 +165,19 @@ export const validateDob = (dob) => {
 
 /**
  * Kiểm tra mã người dùng (code) hợp lệ theo role:
- * - ADMIN: Bắt đầu bằng 'AD', độ dài 9-11 ký tự (VD: AD1234567)
- * - STUDENT/LECTURER: Bắt đầu bằng 3-5 chữ cái hoa, theo sau là số, độ dài 9-11 ký tự (VD: BIT250052)
+ *
+ * - STUDENT : Đúng chuẩn: 3 chữ cái in hoa (mã ngành) + 5-7 chữ số (VD: BIT250052)
+ *             Regex: ^[A-Z]{3}[0-9]{5,7}$  |  Độ dài: 8-10 ký tự
+ *
+ * - LECTURER: Tên viết tắt hoặc mã cán bộ tự do (VD: NTSon, TranVanA, IT_GV01)
+ *             Bắt đầu bằng chữ cái in hoa, các ký tự sau có thể là chữ/số/._-
+ *             Regex: ^[A-Z][A-Za-z0-9._-]{2,14}$  |  Độ dài: 3-15 ký tự
+ *
+ * - ADMIN   : Bắt đầu bằng 'AD', theo sau là chữ/số (VD: ADMIN01, AD123456)
+ *             Regex: ^AD[A-Z0-9]{4,13}$  |  Độ dài: 6-15 ký tự
+ *
  * @param {string} code
- * @param {string} role
+ * @param {string} role  - "STUDENT" | "LECTURER" | "ADMIN"
  * @returns {{ isValid: boolean, message: string }}
  */
 export const validateUserCode = (code, role) => {
@@ -176,23 +185,39 @@ export const validateUserCode = (code, role) => {
         return { isValid: false, message: "Mã người dùng (code) không được để trống." };
     }
 
-    const trimmedCode = String(code).trim().toUpperCase();
+    const trimmedCode = String(code).trim();
 
-    if (trimmedCode.length < 9 || trimmedCode.length > 11) {
-        return { isValid: false, message: "Mã người dùng phải có từ 9 đến 11 ký tự." };
-    }
-
-    if (role === "ADMIN") {
-        const adminRegex = /^AD[A-Z0-9]{7,9}$/;
-        if (!adminRegex.test(trimmedCode)) {
-            return { isValid: false, message: "Mã Admin phải bắt đầu bằng 'AD' và chỉ chứa chữ/số." };
+    if (role === "STUDENT") {
+        // Sinh viên: 3 chữ cái in hoa + 5-7 chữ số, tổng 8-10 ký tự
+        const regex = /^[A-Z]{3}[0-9]{5,7}$/;
+        if (!regex.test(trimmedCode)) {
+            return {
+                isValid: false,
+                message:
+                    "Mã Sinh viên phải gồm 3 chữ cái in hoa (mã ngành) theo sau là 5-7 chữ số (VD: BIT250052).",
+            };
+        }
+    } else if (role === "LECTURER") {
+        // Giảng viên: bắt đầu chữ cái in hoa, phần còn lại có thể là chữ/số/._-, tổng 3-15 ký tự
+        const regex = /^[A-Z][A-Za-z0-9._-]{2,14}$/;
+        if (!regex.test(trimmedCode)) {
+            return {
+                isValid: false,
+                message:
+                    "Mã Giảng viên phải bắt đầu bằng chữ cái in hoa, chỉ chứa chữ cái, số và ký tự ._-, độ dài 3-15 ký tự (VD: NTSon, IT_GV01).",
+            };
+        }
+    } else if (role === "ADMIN") {
+        // Admin: bắt đầu bằng 'AD', theo sau là chữ/số, tổng 6-15 ký tự
+        const regex = /^AD[A-Z0-9]{4,13}$/;
+        if (!regex.test(trimmedCode)) {
+            return {
+                isValid: false,
+                message: "Mã Admin phải bắt đầu bằng 'AD' và chỉ chứa chữ in hoa hoặc số (VD: ADMIN01).",
+            };
         }
     } else {
-        // Áp dụng chung cho STUDENT và LECTURER
-        const studentLecturerRegex = /^[A-Z]{3,5}[0-9]{4,8}$/;
-        if (!studentLecturerRegex.test(trimmedCode)) {
-            return { isValid: false, message: "Mã Sinh viên/Giảng viên phải bắt đầu bằng 3-5 chữ cái in hoa, theo sau là các chữ số." };
-        }
+        return { isValid: false, message: "Vai trò người dùng không hợp lệ." };
     }
 
     return { isValid: true, message: "" };

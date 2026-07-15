@@ -23,6 +23,7 @@ export const loginSchema = z.object({
 /**
  * Schema cho Step 1 của RegisterPage.
  * Validation password: phải có tối thiểu 6 ký tự, ít nhất 1 chữ hoa, 1 số và 1 ký tự đặc biệt (đồng bộ với BE).
+ * Validation code: Regex riêng biệt theo role (STUDENT / LECTURER) — superRefine.
  */
 export const registerStep1Schema = z.object({
   full_name: z
@@ -36,9 +37,7 @@ export const registerStep1Schema = z.object({
     .regex(/^[a-zA-Z0-9_]+$/, 'Tên đăng nhập chỉ được chứa chữ cái, số và dấu gạch dưới'),
   code: z
     .string()
-    .min(3, 'Mã định danh (MSSV/MSGV) phải có ít nhất 3 ký tự')
-    .max(20, 'Mã định danh không được vượt quá 20 ký tự')
-    .regex(/^[a-zA-Z0-9]+$/, 'Mã định danh chỉ được chứa chữ cái và số'),
+    .min(1, 'Mã định danh không được để trống'),
   email: z
     .string()
     .min(1, 'Vui lòng nhập email')
@@ -70,6 +69,29 @@ export const registerStep1Schema = z.object({
 }).refine((data) => data.password === data.confirm_password, {
   message: 'Mật khẩu xác nhận không khớp',
   path: ['confirm_password'],
+}).superRefine((data, ctx) => {
+  const code = data.code?.trim() ?? '';
+  const role = data.role;
+
+  if (role === 'STUDENT') {
+    // 3 chữ cái in hoa (mã ngành) + 5-7 chữ số (khóa + STT), tổng 8-10 ký tự
+    if (!/^[A-Z]{3}[0-9]{5,7}$/.test(code)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['code'],
+        message: 'Mã Sinh viên phải gồm đúng 3 chữ cái in hoa (mã ngành) và 5-7 chữ số phía sau (VD: BIT250052)',
+      });
+    }
+  } else if (role === 'LECTURER') {
+    // Bắt đầu bằng chữ cái in hoa, phần còn lại là chữ/số/._-, tổng 3-15 ký tự
+    if (!/^[A-Z][A-Za-z0-9._-]{2,14}$/.test(code)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['code'],
+        message: 'Mã Giảng viên phải bắt đầu bằng chữ in hoa, chỉ chứa chữ cái, số và ký tự ._-, độ dài 3-15 ký tự (VD: NTSon, IT_GV01)',
+      });
+    }
+  }
 });
 
 /**
