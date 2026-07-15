@@ -15,8 +15,17 @@ export const login = (credentials) =>
   api.post('/auth/login', credentials);
 
 /**
- * Đăng ký tài khoản mới
- * @param {Object} userData - Thông tin đăng ký đầy đủ
+ * Gửi mã OTP 6 số xác thực email trước khi đăng ký.
+ * Gọi trước register — kiểm tra trùng lặp + gửi email OTP.
+ * @param {Object} payload - { email, code, username, phone, full_name }
+ * @returns Promise — data.data: { email, expires_in_minutes }
+ */
+export const sendOtp = (payload) =>
+  api.post('/auth/send-otp', payload);
+
+/**
+ * Đăng ký tài khoản mới (yêu cầu mã OTP hợp lệ)
+ * @param {Object} userData - Thông tin đăng ký đầy đủ + trường `otp`
  * @returns Promise — data.data: { message }
  */
 export const register = (userData) =>

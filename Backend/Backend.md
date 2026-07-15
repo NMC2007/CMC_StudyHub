@@ -54,6 +54,15 @@ Hệ thống sử dụng các khóa chính là số nguyên tự tăng (`SERIAL`
 - `expires_at` (TIMESTAMP, NOT NULL)
 - `created_at` (TIMESTAMP, DEFAULT CURRENT_TIMESTAMP)
 
+#### otp_verifications (Quản lý mã OTP xác thực Email)
+
+- `id` (SERIAL, PRIMARY KEY)
+- `email` (VARCHAR(100), NOT NULL, INDEXED) -- Email trường nhận mã xác thực
+- `otp_code` (VARCHAR(6), NOT NULL) -- Mã OTP 6 chữ số
+- `expires_at` (TIMESTAMP, NOT NULL) -- Thời gian hết hạn (mặc định 10 phút)
+- `is_used` (BOOLEAN, DEFAULT FALSE) -- Đánh dấu đã sử dụng hay chưa
+- `created_at` (TIMESTAMP, DEFAULT CURRENT_TIMESTAMP)
+
 #### cohorts (Khóa học)
 
 - `id` (SERIAL, PRIMARY KEY)
@@ -166,7 +175,8 @@ Tách biệt thành hai cấu hình Middleware chuyên biệt:
 
 ### 4.1. Hệ thống Auth & Profile
 
-- `POST /api/v1/auth/register`: Đăng ký tài khoản mới. Hỗ trợ đăng ký thông qua `cohort_code`, `faculty_code`, `major_code`. Nghiệp vụ bắt buộc mã hóa mật khẩu bằng `bcrypt`.
+- `POST /api/v1/auth/send-otp`: Kiểm tra sơ bộ trùng lặp (email, username, code, phone), sinh mã OTP 6 chữ số ngẫu nhiên lưu vào `otp_verifications` và gửi email HTML qua Gmail SMTP tới email trường (`@st.cmcu.edu.vn` hoặc `@cmcu.edu.vn`). Phải gọi trước `register`.
+- `POST /api/v1/auth/register`: Đăng ký tài khoản mới. Yêu cầu mã xác thực `otp` hợp lệ và chưa hết hạn từ bước `send-otp`. Hỗ trợ đăng ký thông qua `cohort_code`, `faculty_code`, `major_code`. Nghiệp vụ bắt buộc mã hóa mật khẩu bằng `bcrypt`.
 - `POST /api/v1/auth/login`: Xác thực thông tin qua `email` HOẶC `username`, trả về bộ đôi AccessToken và Refresh Token.
 - `POST /api/v1/auth/refresh`: Nhận Refresh Token từ body/cookie, kiểm tra trong DB bảng `refresh_tokens`. Nếu hợp lệ và chưa hết hạn, cấp lại AccessToken mới.
 - `POST /api/v1/auth/logout`: Xóa bản ghi Refresh Token tương ứng trong database.

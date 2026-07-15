@@ -13,6 +13,7 @@ import { RefreshToken } from "#models/entitys/RefreshToken.js";
 import { Cohort } from "#models/entitys/Cohort.js";
 import { Faculty } from "#models/entitys/Faculty.js";
 import { Major } from "#models/entitys/Major.js";
+import { OtpVerification } from "#models/entitys/OtpVerification.js";
 
 // === Lấy Repository instances từ TypeORM DataSource ===
 const userRepository = AppDataSource.getRepository("User");
@@ -20,6 +21,7 @@ const refreshTokenRepository = AppDataSource.getRepository("RefreshToken");
 const cohortRepository = AppDataSource.getRepository("Cohort");
 const facultyRepository = AppDataSource.getRepository("Faculty");
 const majorRepository = AppDataSource.getRepository("Major");
+const otpRepository = AppDataSource.getRepository("OtpVerification");
 
 // ==========================================
 // CÁC HÀM TRUY VẤN BẢNG USERS
@@ -154,4 +156,59 @@ export const deleteRefreshToken = async (token) => {
  */
 export const deleteRefreshTokensByUserId = async (userId) => {
     return await refreshTokenRepository.delete({ user: { id: userId } });
+};
+
+// ==========================================
+// CÁC HÀM TRUY VẤN BẢNG OTP_VERIFICATIONS
+// ==========================================
+
+/**
+ * Xóa tất cả OTP cũ (chưa dùng) của một email.
+ * Gọi trước khi lưu OTP mới để đảm bảo mỗi email chỉ có 1 OTP hoạt động.
+ * @param {string} email
+ * @returns {Promise<Object>}
+ */
+export const deleteOtpsByEmail = async (email) => {
+    return await otpRepository.delete({ email });
+};
+
+/**
+ * Lưu mã OTP mới vào Database.
+ * @param {string} email - Email nhận OTP
+ * @param {string} otpCode - Mã OTP 6 chữ số
+ * @param {Date} expiresAt - Thời điểm hết hạn
+ * @returns {Promise<Object>}
+ */
+export const saveOtp = async (email, otpCode, expiresAt) => {
+    const newOtp = otpRepository.create({
+        email,
+        otp_code: otpCode,
+        expires_at: expiresAt,
+        is_used: false,
+    });
+    return await otpRepository.save(newOtp);
+};
+
+/**
+ * Tìm OTP hợp lệ theo email (chưa dùng, chưa hết hạn).
+ * @param {string} email
+ * @returns {Promise<Object|null>}
+ */
+export const findValidOtp = async (email) => {
+    return await otpRepository
+        .createQueryBuilder("otp")
+        .where("otp.email = :email", { email })
+        .andWhere("otp.is_used = false")
+        .andWhere("otp.expires_at > NOW()")
+        .orderBy("otp.created_at", "DESC")
+        .getOne();
+};
+
+/**
+ * Đánh dấu OTP đã sử dụng thành công (is_used = true).
+ * @param {number} otpId - ID bản ghi OTP
+ * @returns {Promise<Object>}
+ */
+export const markOtpAsUsed = async (otpId) => {
+    return await otpRepository.update(otpId, { is_used: true });
 };

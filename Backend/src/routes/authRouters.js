@@ -10,12 +10,17 @@
  */
 
 import express from "express";
-import { register, login, refreshToken, logout } from "#controller/authController.js";
+import { sendOtp, register, login, refreshToken, logout } from "#controller/authController.js";
 
 const authRouter = express.Router();
 
+// @route  POST /api/v1/auth/send-otp
+// @desc   Gửi mã OTP 6 số xác thực email trước khi đăng ký
+// @access Public
+authRouter.post("/send-otp", sendOtp);
+
 // @route  POST /api/v1/auth/register
-// @desc   Đăng ký tài khoản mới
+// @desc   Đăng ký tài khoản mới (yêu cầu mã OTP hợp lệ)
 // @access Public
 authRouter.post("/register", register);
 

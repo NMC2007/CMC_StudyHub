@@ -7,13 +7,14 @@
  *  - Step 2: Thông tin học thuật (Dynamic theo Role):
  *      • STUDENT: Cascade Select Khóa → Khoa → Ngành (bắt buộc cả 3).
  *      • LECTURER: Chỉ chọn Khoa.
+ *  - Step 3: Xác thực Email bằng mã OTP 6 chữ số.
  *
  * Sau khi đăng ký thành công:
  *  - Redirect về /login kèm state { prefillIdentifier } để tự điền sẵn username/email.
  *
  * Tuân thủ: STUDYHUB_FE.md mục 8.2 (RegisterPage) + validators.js schemas.
  */
-import { useState, useEffect, useRef, forwardRef } from "react";
+import { useState, useEffect, useRef, forwardRef, useCallback } from "react";
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,6 +33,9 @@ import {
   GraduationCap,
   UserCheck,
   Hash,
+  ShieldCheck,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
 
 import {
@@ -40,6 +44,7 @@ import {
   registerStep2LecturerSchema,
 } from "#/utils/validators";
 import { useRegister } from "#/hooks/useAuth";
+import { sendOtp as sendOtpApi } from "#/api/authApi";
 import CascadeSelect from "#/components/academic/CascadeSelect";
 import Input from "#/components/ui/Input";
 import Button from "#/components/ui/Button";
@@ -50,10 +55,124 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // Dữ liệu đầy đủ (Step1 + Step2) để gửi khi xác nhận OTP
+  const [fullPayload, setFullPayload] = useState(null);
+
+  // Trạng thái OTP
+  const [otpValue, setOtpValue] = useState("");
+  const [otpError, setOtpError] = useState("");
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [sendOtpError, setSendOtpError] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
+
   // ref tham chiếu tới hàm setError của Step1Form để gọi từ bên ngoài
   const step1SetErrorRef = React.useRef(null);
 
   const registerMutation = useRegister();
+
+  // Đếm ngược cooldown gửi lại OTP
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  // Hàm gọi API gửi OTP
+  const handleSendOtp = useCallback(
+    async (payload) => {
+      setSendingOtp(true);
+      setSendOtpError("");
+      try {
+        await sendOtpApi({
+          email: payload.email,
+          code: payload.code,
+          username: payload.username,
+          phone: payload.phone,
+          full_name: payload.full_name,
+        });
+        setFullPayload(payload);
+        setCurrentStep(3);
+        setResendCooldown(60);
+        setOtpValue("");
+        setOtpError("");
+      } catch (error) {
+        const status = error.response?.status;
+        const errors = error.response?.data?.errors || [];
+        const message =
+          error.response?.data?.message || "Không thể gửi mã xác thực.";
+
+        // Nếu lỗi trùng lặp (409), quay về Step 1 để hiển thị lỗi
+        if (status === 409) {
+          const setError = step1SetErrorRef.current;
+          const errorList = errors.length > 0 ? errors : [message];
+          if (setError) {
+            errorList.forEach((msg) => {
+              if (/code|mã số|mã định danh|mã người dùng/i.test(msg)) {
+                setError("code", { type: "manual", message: msg });
+              }
+              if (/username|tên đăng nhập/i.test(msg)) {
+                setError("username", { type: "manual", message: msg });
+              }
+              if (/email/i.test(msg)) {
+                setError("email", { type: "manual", message: msg });
+              }
+              if (/phone|điện thoại/i.test(msg)) {
+                setError("phone", { type: "manual", message: msg });
+              }
+            });
+          }
+          setCurrentStep(1);
+        } else {
+          setSendOtpError(message);
+        }
+      } finally {
+        setSendingOtp(false);
+      }
+    },
+    [step1SetErrorRef]
+  );
+
+  // Hàm gửi lại OTP
+  const handleResendOtp = useCallback(() => {
+    if (resendCooldown > 0 || !fullPayload) return;
+    handleSendOtp(fullPayload);
+  }, [resendCooldown, fullPayload, handleSendOtp]);
+
+  // Hàm xác nhận OTP + đăng ký
+  const handleConfirmOtp = useCallback(() => {
+    const trimmedOtp = otpValue.trim();
+    if (trimmedOtp.length !== 6 || !/^\d{6}$/.test(trimmedOtp)) {
+      setOtpError("Mã OTP phải gồm đúng 6 chữ số.");
+      return;
+    }
+    setOtpError("");
+
+    const { confirm_password, ...payloadWithoutConfirm } = fullPayload;
+    registerMutation.mutate(
+      { ...payloadWithoutConfirm, otp: trimmedOtp },
+      {
+        onError: (error) => {
+          const message =
+            error.response?.data?.message || "Đăng ký thất bại.";
+          const errors = error.response?.data?.errors || [];
+          if (errors.some((e) => /otp/i.test(e))) {
+            setOtpError(message);
+          } else {
+            setOtpError(message);
+          }
+        },
+      }
+    );
+  }, [otpValue, fullPayload, registerMutation]);
+
+  // Xác định subtitle theo step
+  const stepSubtitle = {
+    1: "Nhập thông tin cá nhân cơ bản",
+    2: "Chọn thông tin học thuật",
+    3: "Xác thực Email trước khi hoàn tất",
+  };
 
   return (
     <div className="min-h-screen bg-surface flex items-center justify-center p-4">
@@ -75,30 +194,27 @@ export default function RegisterPage() {
               Tạo tài khoản StudyHub
             </h1>
             <p className="text-text-secondary text-sm mt-1.5">
-              {currentStep === 1
-                ? "Nhập thông tin cá nhân cơ bản"
-                : "Chọn thông tin học thuật"}
+              {stepSubtitle[currentStep]}
             </p>
           </div>
 
-          {/* Step indicator */}
+          {/* Step indicator (3 bước) */}
           <div className="flex items-center gap-2 mb-6">
-            <StepIndicator
-              step={1}
-              currentStep={currentStep}
-              label="Thông tin"
-            />
+            <StepIndicator step={1} currentStep={currentStep} label="Thông tin" />
             <div className="flex-1 h-0.5 bg-border rounded-full overflow-hidden">
               <div
                 className="h-full bg-brand-student rounded-full transition-all duration-500"
                 style={{ width: currentStep >= 2 ? "100%" : "0%" }}
               />
             </div>
-            <StepIndicator
-              step={2}
-              currentStep={currentStep}
-              label="Học thuật"
-            />
+            <StepIndicator step={2} currentStep={currentStep} label="Học thuật" />
+            <div className="flex-1 h-0.5 bg-border rounded-full overflow-hidden">
+              <div
+                className="h-full bg-brand-student rounded-full transition-all duration-500"
+                style={{ width: currentStep >= 3 ? "100%" : "0%" }}
+              />
+            </div>
+            <StepIndicator step={3} currentStep={currentStep} label="Xác thực" />
           </div>
 
           {/* Step Content */}
@@ -126,92 +242,30 @@ export default function RegisterPage() {
               role={step1Data?.role}
               onBack={() => setCurrentStep(1)}
               onSubmit={(step2Data) => {
-                // Gộp dữ liệu Step 1 + Step 2 rồi loại bỏ confirm_password trước khi gửi API
-                const fullData = { ...step1Data, ...step2Data };
-                const { confirm_password, ...payload } = fullData;
-                registerMutation.mutate(payload, {
-                  onError: (error) => {
-                    const status = error.response?.status;
-                    const errors = error.response?.data?.errors || [];
-                    const message =
-                      error.response?.data?.message ||
-                      "Đăng ký thất bại. Vui lòng thử lại.";
-
-                    // Ưu tiên mảng errors chi tiết từ server, nếu không có mới dùng message
-                    const errorList = errors.length > 0 ? errors : [message];
-
-                    // Kiểm tra lỗi 400 hoặc 409 (Conflict - Trùng lặp email/username/phone/password...)
-                    if ([400, 409].includes(status) && errorList.length > 0) {
-                      let hasStep1Error = false;
-                      const setError = step1SetErrorRef.current;
-
-                      if (setError) {
-                        errorList.forEach((msg) => {
-                          if (/code|mã số|mã định danh/i.test(msg)) {
-                            setError("code", {
-                              type: "manual",
-                              message: msg,
-                            });
-                            hasStep1Error = true;
-                          }
-                          if (/username|tên đăng nhập/i.test(msg)) {
-                            setError("username", {
-                              type: "manual",
-                              message: msg,
-                            });
-                            hasStep1Error = true;
-                          }
-                          if (/email/i.test(msg)) {
-                            setError("email", {
-                              type: "manual",
-                              message: msg,
-                            });
-                            hasStep1Error = true;
-                          }
-                          if (/phone|điện thoại|số điện thoại/i.test(msg)) {
-                            setError("phone", { type: "manual", message: msg });
-                            hasStep1Error = true;
-                          }
-                          if (/password|mật khẩu/i.test(msg)) {
-                            setError("password", {
-                              type: "manual",
-                              message: msg,
-                            });
-                            hasStep1Error = true;
-                          }
-                          if (/full_name|họ và tên|họ tên/i.test(msg)) {
-                            setError("full_name", {
-                              type: "manual",
-                              message: msg,
-                            });
-                            hasStep1Error = true;
-                          }
-                          if (/dob|ngày sinh/i.test(msg)) {
-                            setError("dob", {
-                              type: "manual",
-                              message: msg,
-                            });
-                            hasStep1Error = true;
-                          }
-                          if (/role|vai trò/i.test(msg)) {
-                            setError("role", {
-                              type: "manual",
-                              message: msg,
-                            });
-                            hasStep1Error = true;
-                          }
-                        });
-                      }
-
-                      // Nếu là lỗi 409 (Trùng lặp) hoặc có lỗi thuộc về ô input của Step 1 -> Lùi về Step 1
-                      if (status === 409 || hasStep1Error) {
-                        setCurrentStep(1);
-                      }
-                    }
-                  },
-                });
+                // Gộp Step 1 + Step 2 rồi gọi send-otp
+                const mergedData = { ...step1Data, ...step2Data };
+                handleSendOtp(mergedData);
               }}
+              isPending={sendingOtp}
+              submitLabel="Gửi mã xác thực Email"
+              submitIcon={Mail}
+            />
+          )}
+
+          {/* Step 3: OTP Verification */}
+          {currentStep === 3 && (
+            <Step3OtpForm
+              email={fullPayload?.email}
+              otpValue={otpValue}
+              setOtpValue={setOtpValue}
+              otpError={otpError}
+              sendOtpError={sendOtpError}
+              resendCooldown={resendCooldown}
+              onResend={handleResendOtp}
+              onConfirm={handleConfirmOtp}
+              onBack={() => setCurrentStep(2)}
               isPending={registerMutation.isPending}
+              sendingOtp={sendingOtp}
             />
           )}
 
@@ -601,7 +655,7 @@ const RoleCard = forwardRef(
 );
 RoleCard.displayName = "RoleCard";
 
-function Step2Form({ role, onBack, onSubmit, isPending }) {
+function Step2Form({ role, onBack, onSubmit, isPending, submitLabel, submitIcon: SubmitIcon }) {
   const isStudent = role === "STUDENT";
   const schema = isStudent
     ? registerStep2StudentSchema
@@ -668,10 +722,179 @@ function Step2Form({ role, onBack, onSubmit, isPending }) {
         >
           Quay lại
         </Button>
-        <Button type="submit" loading={isPending} className="flex-1" size="lg">
-          Đăng ký
+        <Button
+          type="submit"
+          loading={isPending}
+          icon={SubmitIcon || undefined}
+          className="flex-1"
+          size="lg"
+        >
+          {submitLabel || "Đăng ký"}
         </Button>
       </div>
     </form>
+  );
+}
+
+// ─── Step 3: OTP Verification ─────────────────────────────────────────────────
+
+function Step3OtpForm({
+  email,
+  otpValue,
+  setOtpValue,
+  otpError,
+  sendOtpError,
+  resendCooldown,
+  onResend,
+  onConfirm,
+  onBack,
+  isPending,
+  sendingOtp,
+}) {
+  const inputRefs = useRef([]);
+
+  // Tách otpValue thành mảng 6 ký tự (luôn có đủ 6 phần tử để render đúng 6 ô input)
+  const otpDigits = Array.from({ length: 6 }, (_, i) => otpValue[i] || "");
+
+  const handleDigitChange = (index, value) => {
+    // Chỉ cho phép số
+    const digit = value.replace(/[^0-9]/g, "").slice(-1);
+    const newDigits = Array.from({ length: 6 }, (_, i) => otpValue[i] || "");
+    newDigits[index] = digit;
+    setOtpValue(newDigits.join(""));
+
+    // Auto-focus ô tiếp theo nếu đã nhập
+    if (digit && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleKeyDown = (index, e) => {
+    if (e.key === "Backspace" && !otpDigits[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  // Xử lý paste mã OTP
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData("text").replace(/[^0-9]/g, "").slice(0, 6);
+    if (pastedData) {
+      setOtpValue(pastedData);
+      const focusIndex = Math.min(pastedData.length, 5);
+      inputRefs.current[focusIndex]?.focus();
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-5">
+      {/* Icon header */}
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center">
+          <ShieldCheck className="w-8 h-8 text-emerald-500" />
+        </div>
+        <div className="text-center">
+          <h3 className="text-base font-bold text-text-primary mb-1">
+            Xác thực Email
+          </h3>
+          <p className="text-sm text-text-secondary leading-relaxed">
+            Mã xác nhận 6 chữ số đã được gửi tới
+          </p>
+          <p className="text-sm font-semibold text-brand-student mt-0.5">
+            {email}
+          </p>
+        </div>
+      </div>
+
+      {/* OTP Input (6 ô tách rời) */}
+      <div className="flex justify-center gap-2.5" onPaste={handlePaste}>
+        {otpDigits.map((digit, index) => (
+          <input
+            key={index}
+            ref={(el) => (inputRefs.current[index] = el)}
+            type="text"
+            inputMode="numeric"
+            maxLength={1}
+            value={digit}
+            onChange={(e) => handleDigitChange(index, e.target.value)}
+            onKeyDown={(e) => handleKeyDown(index, e)}
+            className={`w-12 h-14 text-center text-xl font-bold border-2 rounded-xl outline-none transition-all duration-200
+              ${
+                otpError
+                  ? "border-red-400 text-red-700 bg-red-50 focus:ring-2 focus:ring-red-200"
+                  : "border-slate-300 text-slate-800 bg-white focus:border-brand-student focus:ring-2 focus:ring-brand-student/20 hover:border-slate-400"
+              }`}
+            autoFocus={index === 0}
+          />
+        ))}
+      </div>
+
+      {/* Error messages */}
+      {otpError && (
+        <p className="text-xs text-red-500 font-medium text-center flex items-center justify-center gap-1">
+          <span>⚠️</span> {otpError}
+        </p>
+      )}
+      {sendOtpError && (
+        <p className="text-xs text-red-500 font-medium text-center flex items-center justify-center gap-1">
+          <span>⚠️</span> {sendOtpError}
+        </p>
+      )}
+
+      {/* Helper text */}
+      <p className="text-xs text-text-muted text-center leading-relaxed">
+        Vui lòng kiểm tra hộp thư đến hoặc <span className="font-semibold">thư rác (spam)</span> của email trên.
+      </p>
+
+      {/* Resend OTP button */}
+      <div className="flex justify-center">
+        <button
+          type="button"
+          onClick={onResend}
+          disabled={resendCooldown > 0 || sendingOtp}
+          className={`flex items-center gap-1.5 text-xs font-semibold transition-colors cursor-pointer
+            ${
+              resendCooldown > 0 || sendingOtp
+                ? "text-slate-400 cursor-not-allowed"
+                : "text-brand-student hover:text-brand-student-dark"
+            }`}
+        >
+          {sendingOtp ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <RefreshCw className="w-3.5 h-3.5" />
+          )}
+          {resendCooldown > 0
+            ? `Gửi lại mã sau ${resendCooldown}s`
+            : sendingOtp
+            ? "Đang gửi lại..."
+            : "Gửi lại mã OTP"}
+        </button>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex gap-3">
+        <Button
+          type="button"
+          variant="secondary"
+          icon={ArrowLeft}
+          onClick={onBack}
+          className="flex-1"
+          size="lg"
+        >
+          Quay lại
+        </Button>
+        <Button
+          type="button"
+          onClick={onConfirm}
+          loading={isPending}
+          icon={ShieldCheck}
+          className="flex-1"
+          size="lg"
+        >
+          Hoàn tất Đăng ký
+        </Button>
+      </div>
+    </div>
   );
 }

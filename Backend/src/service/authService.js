@@ -3,7 +3,8 @@
  * AUTH SERVICE - Tầng nghiệp vụ Authentication
  * ============================================
  * Chứa toàn bộ logic xử lý cho:
- *   - register: Đăng ký tài khoản mới
+ *   - sendRegisterOtp: Gửi mã OTP xác thực email trước khi đăng ký
+ *   - register: Đăng ký tài khoản mới (yêu cầu mã OTP hợp lệ)
  *   - login: Đăng nhập (hỗ trợ email hoặc username)
  *   - refreshToken: Cấp lại Access Token từ Refresh Token
  *   - logout: Đăng xuất (xóa Refresh Token khỏi DB)
@@ -28,6 +29,10 @@ import {
     findCohortByCode,
     findFacultyByCode,
     findMajorByCode,
+    deleteOtpsByEmail,
+    saveOtp,
+    findValidOtp,
+    markOtpAsUsed,
 } from "#repository/authRepository.js";
 import {
     generateAccessToken,
@@ -38,17 +43,116 @@ import {
 import { validateRegisterRequest } from "#models/dto/request/RegisterRequestDTO.js";
 import { validateLoginRequest } from "#models/dto/request/LoginRequestDTO.js";
 import { toUserResponse } from "#models/dto/response/UserResponseDTO.js";
+import { sendOtpEmail } from "#utils/mailProvider.js";
 
 // === Số vòng hash bcrypt (salt rounds) ===
 const SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS, 10) || 10;
 
+// === Thời gian hết hạn OTP (phút) ===
+const OTP_EXPIRY_MINUTES = parseInt(process.env.OTP_EXPIRY_MINUTES, 10) || 10;
+
 // ==========================================
-// 1. ĐĂNG KÝ TÀI KHOẢN MỚI
+// 1. GỬI MÃ OTP XÁC THỰC EMAIL
+// ==========================================
+/**
+ * Gửi mã OTP 6 chữ số tới email người dùng trước khi đăng ký.
+ * Luồng: Kiểm tra trùng lặp → Sinh OTP → Lưu DB → Gửi email
+ *
+ * @param {Object} body - { email, code, username, phone, full_name }
+ * @returns {Promise<{ statusCode: number, message: string, data: Object|null, errors: string[]|null }>}
+ */
+export const sendRegisterOtp = async (body) => {
+    const { email, code, username, phone, full_name } = body;
+
+    // --- Kiểm tra các trường bắt buộc ---
+    if (!email || !code || !username) {
+        return {
+            statusCode: 400,
+            message: "Thiếu thông tin bắt buộc (email, code, username).",
+            data: null,
+            errors: ["Vui lòng điền đầy đủ thông tin."],
+        };
+    }
+
+    // --- Kiểm tra trùng lặp (email, username, code, phone) ---
+    const existingEmail = await findUserByEmail(email);
+    if (existingEmail) {
+        return {
+            statusCode: 409,
+            message: "Email này đã được sử dụng.",
+            data: null,
+            errors: ["Email đã tồn tại."],
+        };
+    }
+
+    const existingUsername = await findUserByUsername(username);
+    if (existingUsername) {
+        return {
+            statusCode: 409,
+            message: "Username này đã được sử dụng.",
+            data: null,
+            errors: ["Username đã tồn tại."],
+        };
+    }
+
+    const existingCode = await findUserByCode(code);
+    if (existingCode) {
+        return {
+            statusCode: 409,
+            message: "Mã người dùng này đã được sử dụng.",
+            data: null,
+            errors: ["Mã người dùng đã tồn tại."],
+        };
+    }
+
+    if (phone) {
+        const existingPhone = await findUserByPhone(phone);
+        if (existingPhone) {
+            return {
+                statusCode: 409,
+                message: "Số điện thoại này đã được sử dụng.",
+                data: null,
+                errors: ["Số điện thoại đã tồn tại."],
+            };
+        }
+    }
+
+    // --- Sinh mã OTP 6 chữ số ngẫu nhiên ---
+    const otpCode = String(Math.floor(100000 + Math.random() * 900000));
+    const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
+
+    // --- Xóa OTP cũ của email này (nếu có) và lưu OTP mới ---
+    await deleteOtpsByEmail(email);
+    await saveOtp(email, otpCode, expiresAt);
+
+    // --- Gửi email OTP ---
+    try {
+        await sendOtpEmail(email, otpCode, full_name || username);
+    } catch (mailError) {
+        console.error("❌ Lỗi gửi email OTP:", mailError.message);
+        return {
+            statusCode: 500,
+            message: "Không thể gửi email xác thực. Vui lòng thử lại sau.",
+            data: null,
+            errors: ["Lỗi hệ thống gửi email."],
+        };
+    }
+
+    return {
+        statusCode: 200,
+        message: `Mã xác thực OTP đã được gửi tới ${email}. Vui lòng kiểm tra hộp thư đến (hoặc thư rác).`,
+        data: { email, expires_in_minutes: OTP_EXPIRY_MINUTES },
+        errors: null,
+    };
+};
+
+// ==========================================
+// 2. ĐĂNG KÝ TÀI KHOẢN MỚI (YÊU CẦU OTP)
 // ==========================================
 /**
  * Xử lý nghiệp vụ đăng ký.
- * Luồng: Validate DTO → Check trùng → Hash password → Lưu DB → Trả UserResponse
- * @param {Object} body - Request body từ client
+ * Luồng: Validate DTO → Xác thực OTP → Check trùng → Hash password → Lưu DB → Trả UserResponse
+ * @param {Object} body - Request body từ client (bao gồm trường `otp`)
  * @returns {Promise<{ statusCode: number, message: string, data: Object|null, errors: string[]|null }>}
  */
 export const register = async (body) => {
@@ -62,6 +166,30 @@ export const register = async (body) => {
             errors: validation.errors,
         };
     }
+
+    // Bước 1.5: Xác thực mã OTP
+    const otpValue = String(body.otp || "").trim();
+    if (!otpValue) {
+        return {
+            statusCode: 400,
+            message: "Vui lòng nhập mã xác thực OTP.",
+            data: null,
+            errors: ["Mã OTP không được để trống."],
+        };
+    }
+
+    const validOtp = await findValidOtp(body.email);
+    if (!validOtp || validOtp.otp_code !== otpValue) {
+        return {
+            statusCode: 400,
+            message: "Mã xác thực OTP không chính xác hoặc đã hết hạn.",
+            data: null,
+            errors: ["OTP không hợp lệ. Vui lòng kiểm tra lại hoặc gửi lại mã mới."],
+        };
+    }
+
+    // Đánh dấu OTP đã sử dụng ngay (tránh reuse)
+    await markOtpAsUsed(validOtp.id);
 
     // Bước 2: Check trùng email (Lớp phòng thủ 1 — Service)
     const existingEmail = await findUserByEmail(body.email);

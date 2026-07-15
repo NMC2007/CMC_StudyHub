@@ -13,11 +13,31 @@ import { toAPIResponse } from "#models/dto/response/APIResponse.js";
 import * as authService from "#service/authService.js";
 
 // ==========================================
-// 1. ĐĂNG KÝ TÀI KHOẢN
+// 1. GỬI MÃ OTP XÁC THỰC EMAIL
+// ==========================================
+/**
+ * POST /api/v1/auth/send-otp
+ * Nhận body { email, code, username, phone, full_name }
+ * → Kiểm tra trùng lặp → Sinh OTP → Gửi email → trả APIResponse
+ */
+export const sendOtp = async (req, res, next) => {
+    try {
+        const result = await authService.sendRegisterOtp(req.body);
+
+        return res
+            .status(result.statusCode)
+            .json(toAPIResponse(result.statusCode, result.message, result.data, result.errors));
+    } catch (error) {
+        next(error);
+    }
+};
+
+// ==========================================
+// 2. ĐĂNG KÝ TÀI KHOẢN (YÊU CẦU OTP)
 // ==========================================
 /**
  * POST /api/v1/auth/register
- * Nhận body → gọi authService.register → trả APIResponse
+ * Nhận body (thông tin đăng ký + otp) → gọi authService.register → trả APIResponse
  */
 export const register = async (req, res, next) => {
     try {

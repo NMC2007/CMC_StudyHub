@@ -18,7 +18,38 @@
 
 
 ### =========================================================================
-### 1. ĐĂNG KÝ TÀI KHOẢN (POST /register)
+### 0.5 GỬI MÃ OTP XÁC THỰC EMAIL (POST /send-otp) — GỌI TRƯỚC KHI ĐĂNG KÝ
+### =========================================================================
+
+### 0.5.1 Gửi OTP cho sinh viên CNTT
+POST {{baseUrl}}/send-otp
+Content-Type: {{contentType}}
+
+{
+  "email": "bit250051@st.cmcu.edu.vn",
+  "code": "BIT250051",
+  "username": "sinhvienbit",
+  "phone": "0912345671",
+  "full_name": "Nguyễn Văn Sinh Viên CNTT"
+}
+
+### 0.5.2 Gửi OTP cho giảng viên (tên viết tắt)
+POST {{baseUrl}}/send-otp
+Content-Type: {{contentType}}
+
+{
+  "email": "ntson@cmcu.edu.vn",
+  "code": "NTSon",
+  "username": "ntson_gv",
+  "phone": "0987654321",
+  "full_name": "Nguyễn Thị Sơn"
+}
+
+
+### =========================================================================
+### 1. ĐĂNG KÝ TÀI KHOẢN (POST /register) — YÊU CẦU MÃ OTP HỢP LỆ
+### Lưu ý: Trước khi chạy test đăng ký, phải gọi /send-otp trước
+### rồi lấy mã OTP từ email (hoặc từ console log) dán vào trường "otp".
 ### =========================================================================
 
 ### 1.1 Đăng ký sinh viên CNTT (STUDENT - K1, CNTT, BIT)
@@ -29,14 +60,15 @@ Content-Type: {{contentType}}
   "code": "BIT250051",
   "full_name": "Nguyễn Văn Sinh Viên CNTT",
   "username": "sinhvienbit",
-  "email": "sinhvienbit@studyhub.edu.vn",
+  "email": "bit250051@st.cmcu.edu.vn",
   "phone": "0912345671",
   "dob": "2003-05-20",
   "password": "Sinhvien@123",
   "role": "STUDENT",
   "cohort_code": "K1",
   "faculty_code": "CNTT",
-  "major_code": "BIT"
+  "major_code": "BIT",
+  "otp": "DÁN_MÃ_OTP_TỪ_EMAIL_VÀO_ĐÂY"
 }
 
 ### 1.2 Đăng ký sinh viên Khoa học máy tính (STUDENT - K2, CNTT, BCS)

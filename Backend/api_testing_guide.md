@@ -8,10 +8,35 @@ Tài liệu này tổng hợp toàn bộ các API đang được cung cấp bở
 
 ## 1. MODULE AUTHENTICATION (XÁC THỰC)
 
-### 1.1. Đăng ký tài khoản
+### 1.1. Gửi mã OTP xác thực Email (Bước 1)
+
+- **Endpoint:** `POST /auth/send-otp`
+- **Quyền (Access):** Public
+- **Mô tả:** Kiểm tra trùng lặp thông tin (email, username, code, phone) rồi gửi mã OTP 6 chữ số tới email của người dùng. Phải gọi API này **trước** khi gọi `/auth/register`.
+- **Body (`application/json`):**
+  ```json
+  {
+    "email": "bit250052@st.cmcu.edu.vn",
+    "code": "BIT250052",
+    "username": "nva2004",
+    "phone": "0912345678",
+    "full_name": "Nguyễn Văn A"
+  }
+  ```
+- **Response thành công (200):**
+  ```json
+  {
+    "statusCode": 200,
+    "message": "Mã xác thực OTP đã được gửi tới bit250052@st.cmcu.edu.vn.",
+    "data": { "email": "bit250052@st.cmcu.edu.vn", "expires_in_minutes": 10 }
+  }
+  ```
+
+### 1.2. Đăng ký tài khoản (Bước 2 — yêu cầu OTP)
 
 - **Endpoint:** `POST /auth/register`
 - **Quyền (Access):** Public
+- **Lưu ý:** Trường `otp` là **bắt buộc** — phải là mã OTP 6 chữ số nhận được từ email sau khi gọi `/auth/send-otp`.
 - **Quy định Mã định danh (`code`) theo vai trò:**
   - `STUDENT`: Đúng chuẩn `^[A-Z]{3}[0-9]{5,7}$` — 3 chữ cái in hoa (mã ngành) + 5-7 chữ số (khóa + STT). VD: `BIT250052`.
   - `LECTURER`: Linh hoạt `^[A-Z][A-Za-z0-9._-]{2,14}$` — tên viết tắt hoặc mã cán bộ, bắt đầu bằng chữ in hoa, 3-15 ký tự. VD: `NTSon`, `IT_GV01`.
@@ -32,7 +57,8 @@ Tài liệu này tổng hợp toàn bộ các API đang được cung cấp bở
     "role": "STUDENT",
     "cohort_code": "K1",
     "faculty_code": "CNTT",
-    "major_code": "BIT"
+    "major_code": "BIT",
+    "otp": "123456"
   }
   ```
 - **Body (`application/json`) — Giảng viên:**
@@ -46,7 +72,8 @@ Tài liệu này tổng hợp toàn bộ các API đang được cung cấp bở
     "dob": "1988-11-12",
     "password": "Giangvien@123",
     "role": "LECTURER",
-    "faculty_code": "CNTT"
+    "faculty_code": "CNTT",
+    "otp": "654321"
   }
   ```
   _(Ghi chú: Nếu `role` là `LECTURER`, chỉ cần cung cấp `faculty_code`)_

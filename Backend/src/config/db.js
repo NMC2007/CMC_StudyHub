@@ -24,6 +24,7 @@ import { GroupMember } from "#models/entitys/GroupMember.js";
 import { DocumentLike } from "#models/entitys/DocumentLike.js";
 import { Bookmark } from "#models/entitys/Bookmark.js";
 import { DocumentView } from "#models/entitys/DocumentView.js";
+import { OtpVerification } from "#models/entitys/OtpVerification.js";
 import { GroupDocument } from "#models/entitys/GroupDocument.js";
 
 dotenv.config();
@@ -66,6 +67,7 @@ export const AppDataSource = new DataSource({
         DocumentLike,
         Bookmark,
         DocumentView,
+        OtpVerification,
     ],
 });
 
@@ -80,6 +82,20 @@ export const connectDB = async () => {
         console.log("✅ TypeORM: Kết nối PostgreSQL thành công!");
         console.log("📋 TypeORM: Synchronize schema đã được bật (dev mode).");
         console.log("📝 TypeORM: SQL Logging đã được bật.");
+
+        // === ĐẢM BẢO TẠO BẢNG otp_verifications (Phòng trường hợp DB_SYNCHRONIZE=false hoặc nodemon không reload .env) ===
+        await AppDataSource.query(`
+            CREATE TABLE IF NOT EXISTS "otp_verifications" (
+                "id" SERIAL PRIMARY KEY,
+                "email" VARCHAR(100) NOT NULL,
+                "otp_code" VARCHAR(6) NOT NULL,
+                "expires_at" TIMESTAMP NOT NULL,
+                "is_used" BOOLEAN NOT NULL DEFAULT false,
+                "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS "IDX_OTP_EMAIL" ON "otp_verifications" ("email");
+        `);
+        console.log("🛠️ TypeORM: Đã kiểm tra & đảm bảo bảng otp_verifications tồn tại trong DB.");
     } catch (error) {
         console.error("❌ TypeORM: Kết nối thất bại:", error.message);
         throw error;
