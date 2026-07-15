@@ -36,17 +36,23 @@ export default defineConfig({
 
     rollupOptions: {
       output: {
-        // Phân tách vendor chunks để tận dụng cache trình duyệt:
-        // - Nếu chỉ code app thay đổi, trình duyệt không cần tải lại vendor chunk
-        manualChunks: {
-          // React core runtime (ít thay đổi nhất)
-          'vendor-react': ['react', 'react-dom', 'react-router'],
-          // State management & data fetching
-          'vendor-state': ['zustand', '@tanstack/react-query'],
-          // UI libraries (icons, toasts)
-          'vendor-ui': ['lucide-react', 'sonner'],
-          // HTTP client
-          'vendor-axios': ['axios'],
+        // Phân tách vendor chunks theo dạng function để tương thích với Vite 8 / Rolldown:
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react/') || id.includes('react-dom/') || id.includes('react-router')) {
+              return 'vendor-react';
+            }
+            if (id.includes('zustand') || id.includes('@tanstack/react-query')) {
+              return 'vendor-state';
+            }
+            if (id.includes('sonner')) {
+              return 'vendor-ui';
+            }
+            if (id.includes('axios')) {
+              return 'vendor-axios';
+            }
+            return 'vendor-core';
+          }
         },
       },
     },
