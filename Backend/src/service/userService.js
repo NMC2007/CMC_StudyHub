@@ -16,6 +16,7 @@ import {
 import { validateUpdateProfileRequest } from "#models/dto/request/UpdateProfileRequestDTO.js";
 import { toUserResponse } from "#models/dto/response/UserResponseDTO.js";
 import { deleteRefreshTokensByUserId } from "#repository/authRepository.js";
+import { cleanupFile } from "#utils/uploadGuard.js";
 
 /**
  * Lấy thông tin chi tiết của người dùng hiện tại.
@@ -120,14 +121,8 @@ export const updateUserAvatar = async (userId, file) => {
     const currentUser = await findUserProfileById(userId);
     if (!currentUser) {
         // Xóa file vừa upload nếu user không tồn tại
-        if (file && file.path) {
-            try {
-                await fs.promises.unlink(file.path);
-            } catch (e) {
-                if (e.code !== "ENOENT") {
-                    console.warn(`⚠️ [Cleanup Warning] Không thể xóa file avatar tạm: ${file.path}`, e.message);
-                }
-            }
+        if (file) {
+            await cleanupFile(file);
         }
 
         return {
@@ -154,17 +149,11 @@ export const updateUserAvatar = async (userId, file) => {
     // 3. Cập nhật đường dẫn avatar mới trong DB (dọn dẹp file mới upload nếu lỗi DB)
     let updatedUser;
     try {
-        const avatarUrl = `/uploads/avatars/${file.filename}`;
+        const avatarUrl = file.path;
         updatedUser = await updateUserById(userId, { avatar: avatarUrl });
     } catch (dbError) {
-        if (file && file.path) {
-            try {
-                await fs.promises.unlink(file.path);
-            } catch (cleanupError) {
-                if (cleanupError.code !== "ENOENT") {
-                    console.warn(`⚠️ [Cleanup Warning] Không thể xóa file avatar khi rollback: ${file.path}`, cleanupError.message);
-                }
-            }
+        if (file) {
+            await cleanupFile(file);
         }
         throw dbError;
     }

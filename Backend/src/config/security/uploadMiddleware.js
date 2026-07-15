@@ -2,37 +2,45 @@
  * ============================================
  * UPLOAD MIDDLEWARE - Quản lý tải lên tệp tin
  * ============================================
- * Cấu hình thư viện Multer để xử lý multipart/form-data.
+ * Cấu hình thư viện Multer & Cloudinary để xử lý multipart/form-data.
  * Chia làm 2 bộ lọc chuyên biệt:
- * 1. uploadDocument: dành cho tài liệu học tập (pdf, docx, pptx, zip) - tối đa 50MB
- * 2. uploadAvatar: dành cho ảnh đại diện (jpg, jpeg, png, webp) - tối đa 5MB
+ * 1. uploadDocument: dành cho tài liệu học tập (pdf, docx, pptx, zip) - tối đa 50MB (Lưu lên folder studyhub/documents)
+ * 2. uploadAvatar: dành cho ảnh đại diện (jpg, jpeg, png, webp) - tối đa 5MB (Lưu lên folder studyhub/avatars)
  */
 
 import multer from "multer";
 import path from "path";
-import fs from "fs";
+import dotenv from "dotenv";
+import { v2 as cloudinary } from "cloudinary";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
 import { UPLOAD_CONFIG } from "#config/constants.js";
 
-// === Hàm tạo thư mục nếu chưa tồn tại ===
-const ensureDirectoryExistence = (dirPath) => {
-    if (!fs.existsSync(dirPath)) {
-        fs.mkdirSync(dirPath, { recursive: true });
-    }
-};
+dotenv.config();
+
+// ==========================================
+// CẤU HÌNH CLOUDINARY SDK
+// ==========================================
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 // ==========================================
 // 1. CẤU HÌNH LƯU TRỮ TÀI LIỆU (DOCUMENT)
 // ==========================================
-const documentStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadPath = path.join(process.cwd(), "public/uploads/documents");
-        ensureDirectoryExistence(uploadPath);
-        cb(null, uploadPath);
-    },
-    filename: (req, file, cb) => {
-        const safeOriginalName = file.originalname.replace(/\s+/g, "_");
-        const uniqueSuffix = `${Date.now()}-${safeOriginalName}`;
-        cb(null, uniqueSuffix);
+const documentStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: async (req, file) => {
+        const ext = path.extname(file.originalname).toLowerCase().replace(".", "");
+        const safeOriginalName = file.originalname.replace(/\.[^/.]+$/, "").replace(/\s+/g, "_");
+        return {
+            folder: "studyhub/documents",
+            resource_type: "raw", // Dùng 'raw' cho tất cả file tài liệu (PDF, DOCX, PPTX, ZIP) để giữ nguyên cấu trúc nhị phân
+            type: "upload",
+            access_mode: "public",
+            public_id: `${Date.now()}-${safeOriginalName}.${ext}`,
+        };
     },
 });
 
@@ -57,16 +65,18 @@ export const uploadDocument = multer({
 // ==========================================
 // 2. CẤU HÌNH LƯU TRỮ ẢNH ĐẠI DIỆN (AVATAR)
 // ==========================================
-const avatarStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadPath = path.join(process.cwd(), "public/uploads/avatars");
-        ensureDirectoryExistence(uploadPath);
-        cb(null, uploadPath);
-    },
-    filename: (req, file, cb) => {
-        const safeOriginalName = file.originalname.replace(/\s+/g, "_");
-        const uniqueSuffix = `${Date.now()}-${safeOriginalName}`;
-        cb(null, uniqueSuffix);
+const avatarStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: async (req, file) => {
+        const safeOriginalName = file.originalname.replace(/\.[^/.]+$/, "").replace(/\s+/g, "_");
+        return {
+            folder: "studyhub/avatars",
+            type: "upload",
+            access_mode: "public",
+            allowed_formats: ["jpg", "jpeg", "png", "webp"],
+            public_id: `${Date.now()}-${safeOriginalName}`,
+            transformation: [{ width: 500, height: 500, crop: "limit" }],
+        };
     },
 });
 
@@ -87,3 +97,4 @@ export const uploadAvatar = multer({
         fileSize: UPLOAD_CONFIG.AVATAR.MAX_SIZE_BYTES,
     },
 });
+

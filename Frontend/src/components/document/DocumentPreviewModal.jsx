@@ -18,7 +18,7 @@
  *  - STUDYHUB_FE.md mục 2 (cấu trúc thư mục document/), mục 7.3 (Modal pattern),
  *    mục 19 (React.memo, useCallback), mục 21 (coding conventions).
  */
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback } from "react";
 import {
   X,
   Download,
@@ -34,140 +34,338 @@ import {
   Heart,
   AlertCircle,
   Loader2,
-} from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
-import { useDocumentDetail } from '#/hooks/useDocuments';
-import { getFileUrl, formatFileSize, formatCount, formatDate } from '#/utils/formatters';
-import Badge from '#/components/ui/Badge';
+} from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useDocumentDetail } from "#/hooks/useDocuments";
+import {
+  getFileUrl,
+  formatFileSize,
+  formatCount,
+  formatDate,
+} from "#/utils/formatters";
+import Badge from "#/components/ui/Badge";
 
 // ─── Hằng số — Phân loại định dạng file ───────────────────────────────────────
 
 /** Các định dạng có thể xem trực tiếp bằng iframe trong trình duyệt */
-const PREVIEWABLE_TYPES = new Set(['pdf', 'jpg', 'jpeg', 'png', 'webp', 'gif', 'svg']);
+const PREVIEWABLE_TYPES = new Set([
+  "pdf",
+  "jpg",
+  "jpeg",
+  "png",
+  "webp",
+  "gif",
+  "svg",
+]);
 
 /** Ánh xạ định dạng file sang icon Lucide và nhãn hiển thị */
 const FILE_TYPE_CONFIG = {
   pdf: {
     icon: FileText,
-    label: 'PDF Document',
-    color: 'text-red-600',
-    bg: 'bg-red-50',
-    border: 'border-red-200',
+    label: "PDF Document",
+    color: "text-red-600",
+    bg: "bg-red-50",
+    border: "border-red-200",
   },
   docx: {
     icon: FileText,
-    label: 'Microsoft Word (.docx)',
-    color: 'text-blue-700',
-    bg: 'bg-blue-50',
-    border: 'border-blue-200',
+    label: "Microsoft Word (.docx)",
+    color: "text-blue-700",
+    bg: "bg-blue-50",
+    border: "border-blue-200",
   },
   doc: {
     icon: FileText,
-    label: 'Microsoft Word (.doc)',
-    color: 'text-blue-700',
-    bg: 'bg-blue-50',
-    border: 'border-blue-200',
+    label: "Microsoft Word (.doc)",
+    color: "text-blue-700",
+    bg: "bg-blue-50",
+    border: "border-blue-200",
   },
   pptx: {
     icon: Presentation,
-    label: 'Microsoft PowerPoint (.pptx)',
-    color: 'text-orange-600',
-    bg: 'bg-orange-50',
-    border: 'border-orange-200',
+    label: "Microsoft PowerPoint (.pptx)",
+    color: "text-orange-600",
+    bg: "bg-orange-50",
+    border: "border-orange-200",
   },
   ppt: {
     icon: Presentation,
-    label: 'Microsoft PowerPoint (.ppt)',
-    color: 'text-orange-600',
-    bg: 'bg-orange-50',
-    border: 'border-orange-200',
+    label: "Microsoft PowerPoint (.ppt)",
+    color: "text-orange-600",
+    bg: "bg-orange-50",
+    border: "border-orange-200",
   },
   zip: {
     icon: Archive,
-    label: 'Tệp nén (.zip)',
-    color: 'text-amber-600',
-    bg: 'bg-amber-50',
-    border: 'border-amber-200',
+    label: "Tệp nén (.zip)",
+    color: "text-amber-600",
+    bg: "bg-amber-50",
+    border: "border-amber-200",
   },
 };
 
 // ─── Icon theo document_type (nghiệp vụ StudyHub) ─────────────────────────────
 const getDocTypeIcon = (type) => {
   switch (type) {
-    case 'DOCUMENT':   return <FileText className="w-4 h-4 text-blue-600" />;
-    case 'ASSIGNMENT': return <ClipboardList className="w-4 h-4 text-amber-600" />;
-    case 'EXAM':       return <GraduationCap className="w-4 h-4 text-purple-600" />;
-    case 'SLIDE':      return <Presentation className="w-4 h-4 text-rose-600" />;
-    case 'REFERENCE':  return <BookOpen className="w-4 h-4 text-emerald-600" />;
-    default:           return <DefaultFileIcon className="w-4 h-4 text-slate-500" />;
+    case "DOCUMENT":
+      return <FileText className="w-4 h-4 text-blue-600" />;
+    case "ASSIGNMENT":
+      return <ClipboardList className="w-4 h-4 text-amber-600" />;
+    case "EXAM":
+      return <GraduationCap className="w-4 h-4 text-purple-600" />;
+    case "SLIDE":
+      return <Presentation className="w-4 h-4 text-rose-600" />;
+    case "REFERENCE":
+      return <BookOpen className="w-4 h-4 text-emerald-600" />;
+    default:
+      return <DefaultFileIcon className="w-4 h-4 text-slate-500" />;
   }
 };
 
 // ─── Lấy cấu hình hiển thị theo file_type (phần mở rộng file) ────────────────
 const getFileConfig = (fileType) => {
-  const normalized = (fileType || '').toLowerCase().replace('.', '');
-  return FILE_TYPE_CONFIG[normalized] || {
-    icon: DefaultFileIcon,
-    label: `Tệp ${normalized || 'tài liệu'}`,
-    color: 'text-slate-500',
-    bg: 'bg-slate-50',
-    border: 'border-slate-200',
-  };
+  const normalized = (fileType || "").toLowerCase().replace(".", "");
+  return (
+    FILE_TYPE_CONFIG[normalized] || {
+      icon: DefaultFileIcon,
+      label: `Tệp ${normalized || "tài liệu"}`,
+      color: "text-slate-500",
+      bg: "bg-slate-50",
+      border: "border-slate-200",
+    }
+  );
 };
 
 // ─── Kiểm tra file có thể xem trực tiếp bằng iframe không ────────────────────
 const isPreviewable = (fileType) => {
-  const normalized = (fileType || '').toLowerCase().replace('.', '');
+  const normalized = (fileType || "").toLowerCase().replace(".", "");
   return PREVIEWABLE_TYPES.has(normalized);
 };
 
 // ─── Khu vực Xem Trước: iframe cho PDF/ảnh ───────────────────────────────────
-const PreviewIframe = ({ fileUrl, title }) => (
-  <div className="flex-1 min-h-0 flex flex-col">
-    <iframe
-      src={fileUrl}
-      title={`Xem trước: ${title}`}
-      className="w-full flex-1 rounded-xl border border-slate-200 bg-slate-50 min-h-[520px]"
-      style={{ minHeight: '520px' }}
-    />
-  </div>
-);
+// ─── Khu vực Xem Trước: iframe cho PDF/ảnh (Hỗ trợ Smart Blob URL + Google Docs Viewer) ───
+// ─── Khu vực Xem Trước: iframe cho PDF/ảnh (Hỗ trợ Smart Blob URL + Google Docs Viewer) ───
+const PreviewIframe = ({ fileUrl, title, fileType }) => {
+  const [blobUrl, setBlobUrl] = React.useState(null);
+  const [loadingBlob, setLoadingBlob] = React.useState(true);
+  const [useGoogleViewer, setUseGoogleViewer] = React.useState(false);
+  const [is401Error, setIs401Error] = React.useState(false);
+
+  React.useEffect(() => {
+    let active = true;
+    let createdUrl = null;
+
+    const fetchBlobPreview = async () => {
+      if (!fileUrl) return;
+      if (fileType !== "pdf") {
+        if (active) {
+          setBlobUrl(fileUrl);
+          setLoadingBlob(false);
+        }
+        return;
+      }
+
+      try {
+        setLoadingBlob(true);
+        setIs401Error(false);
+        const response = await fetch(fileUrl);
+        if (response.status === 401 || response.status === 403) {
+          throw new Error(`HTTP ${response.status} Unauthorized`);
+        }
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const blob = await response.blob();
+        // Buộc Content-Type thành application/pdf để iframe Chrome/Edge hiển thị trình đọc PDF tích hợp
+        const pdfBlob = new Blob([blob], { type: "application/pdf" });
+        createdUrl = URL.createObjectURL(pdfBlob);
+        if (active) {
+          setBlobUrl(createdUrl);
+          setLoadingBlob(false);
+        }
+      } catch (err) {
+        console.warn("⚠️ Không thể tải blob PDF để xem trực tiếp:", err);
+        if (active) {
+          if (
+            err.message &&
+            (err.message.includes("401") || err.message.includes("403"))
+          ) {
+            setIs401Error(true);
+          } else {
+            setUseGoogleViewer(true);
+          }
+          setLoadingBlob(false);
+        }
+      }
+    };
+
+    fetchBlobPreview();
+
+    return () => {
+      active = false;
+      if (createdUrl) URL.revokeObjectURL(createdUrl);
+    };
+  }, [fileUrl, fileType]);
+
+  const iframeSrc = useGoogleViewer
+    ? `https://docs.google.com/gview?url=${encodeURIComponent(fileUrl)}&embedded=true`
+    : blobUrl || fileUrl;
+
+  return (
+    <div className="flex-1 min-h-0 flex flex-col gap-2">
+      {is401Error && (
+        <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl p-4 text-xs text-red-800 shrink-0 shadow-sm animate-in fade-in">
+          <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h4 className="font-bold text-red-900 text-sm mb-1">
+              Quyền truy cập tệp PDF bị Cloudinary chặn (Lỗi 401 Unauthorized)
+            </h4>
+            <p className="leading-relaxed mb-2">
+              Tệp <strong>"{title}"</strong> là file cũ tải lên từ trước đó (nằm
+              ở đường dẫn <code>/image/upload/...</code> của Cloudinary). Theo
+              mặc định bảo mật, Cloudinary từ chối quyền truy cập công khai tệp
+              PDF trên cổng CDN hình ảnh.
+            </p>
+            <p className="font-semibold text-red-950">
+              💡 Cách khắc phục: Bạn hãy tải lên (Upload) lại tệp tài liệu này
+              hoặc upload một tệp PDF mới. Hệ thống vừa được nâng cấp cấu hình{" "}
+              <strong>Public RAW Storage</strong> (<code>/raw/upload/</code>),
+              đảm bảo 100% tài liệu mới tải lên sẽ hiển thị và xem trước hoàn
+              hảo!
+            </p>
+          </div>
+        </div>
+      )}
+
+      {fileType === "pdf" && !is401Error && (
+        <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-slate-100/80 border border-slate-200/60 text-xs shrink-0">
+          <span className="text-slate-600 font-medium flex items-center gap-1.5">
+            <FileText className="w-3.5 h-3.5 text-red-500" />
+            Trình xem PDF:{" "}
+            <strong className="text-slate-800">
+              {useGoogleViewer
+                ? "Google Docs Viewer (Đám mây)"
+                : "Trình đọc gốc trình duyệt (Trực tiếp)"}
+            </strong>
+          </span>
+          <button
+            type="button"
+            onClick={() => setUseGoogleViewer(!useGoogleViewer)}
+            className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-semibold transition-colors cursor-pointer shadow-sm"
+          >
+            Chuyển sang{" "}
+            {useGoogleViewer ? "Trình đọc gốc" : "Google Docs Viewer"}
+          </button>
+        </div>
+      )}
+
+      {!is401Error && (
+        <div className="relative flex-1 min-h-[520px] rounded-xl border border-slate-200 bg-slate-50 overflow-hidden flex flex-col">
+          {loadingBlob && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/90 z-10 gap-3">
+              <Loader2 className="w-8 h-8 text-brand-student animate-spin" />
+              <p className="text-sm text-slate-600 font-medium">
+                Đang tải trình đọc PDF...
+              </p>
+            </div>
+          )}
+
+          <iframe
+            src={iframeSrc}
+            title={`Xem trước: ${title}`}
+            className="w-full flex-1 min-h-[520px] border-0"
+            style={{ minHeight: "520px" }}
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── Hàm tiện ích tải file thông minh qua Fetch Blob ──────────────────────────
+const downloadFileSmart = async (
+  fileUrl,
+  rawFileName,
+  fileType,
+  setLoading,
+) => {
+  if (!fileUrl) return;
+  let finalFileName = rawFileName || `tai-lieu.${fileType}`;
+  if (fileType && !finalFileName.toLowerCase().endsWith(`.${fileType}`)) {
+    finalFileName = `${finalFileName}.${fileType}`;
+  }
+
+  try {
+    if (setLoading) setLoading(true);
+    const response = await fetch(fileUrl);
+    if (!response.ok) throw new Error("Fetch status: " + response.status);
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = finalFileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(blobUrl);
+  } catch (err) {
+    console.warn(
+      "⚠️ Fallback tải trực tiếp do lỗi fetch blob cross-origin:",
+      err,
+    );
+    let downloadUrl = fileUrl;
+    if (
+      downloadUrl.includes("res.cloudinary.com") &&
+      downloadUrl.includes("/upload/")
+    ) {
+      downloadUrl = downloadUrl.replace("/upload/", "/upload/fl_attachment/");
+    }
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.download = finalFileName;
+    link.target = "_blank";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } finally {
+    if (setLoading) setLoading(false);
+  }
+};
 
 // ─── Khu vực Download Card: cho .docx/.pptx/.zip ─────────────────────────────
 const DownloadCard = ({ fileType, fileUrl, fileName, fileSize }) => {
   const config = getFileConfig(fileType);
   const FileIcon = config.icon;
+  const [isDownloading, setIsDownloading] = React.useState(false);
 
   const handleDownload = () => {
-    // Tạo thẻ <a> ngầm kích hoạt tải về, tránh mở tab mới
-    const link = document.createElement('a');
-    link.href = fileUrl;
-    link.download = fileName || `tai-lieu.${fileType}`;
-    link.rel = 'noopener noreferrer';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadFileSmart(fileUrl, fileName, fileType, setIsDownloading);
   };
 
   const messageMap = {
-    docx: 'Tài liệu Word (.docx) cần được tải về máy để hiển thị với đúng định dạng và font chữ của tác giả.',
-    doc:  'Tài liệu Word (.doc) cần được tải về máy để hiển thị với đúng định dạng và font chữ của tác giả.',
-    pptx: 'Bài trình chiếu PowerPoint (.pptx) cần được tải về máy để hiển thị với đầy đủ hiệu ứng và định dạng chuẩn.',
-    ppt:  'Bài trình chiếu PowerPoint (.ppt) cần được tải về máy để hiển thị với đầy đủ hiệu ứng và định dạng chuẩn.',
-    zip:  'Tệp nén (.zip) chứa gói nhiều tài liệu bên trong. Vui lòng tải về máy và giải nén để sử dụng nội dung.',
+    docx: "Tài liệu Word (.docx) cần được tải về máy để hiển thị với đúng định dạng và font chữ của tác giả.",
+    doc: "Tài liệu Word (.doc) cần được tải về máy để hiển thị với đúng định dạng và font chữ của tác giả.",
+    pptx: "Bài trình chiếu PowerPoint (.pptx) cần được tải về máy để hiển thị với đầy đủ hiệu ứng và định dạng chuẩn.",
+    ppt: "Bài trình chiếu PowerPoint (.ppt) cần được tải về máy để hiển thị với đầy đủ hiệu ứng và định dạng chuẩn.",
+    zip: "Tệp nén (.zip) chứa gói nhiều tài liệu bên trong. Vui lòng tải về máy và giải nén để sử dụng nội dung.",
   };
-  const normalizedType = (fileType || '').toLowerCase().replace('.', '');
-  const message = messageMap[normalizedType] || 'Định dạng tệp này cần được tải về máy để xem.';
+  const normalizedType = (fileType || "").toLowerCase().replace(".", "");
+  const message =
+    messageMap[normalizedType] ||
+    "Định dạng tệp này cần được tải về máy để xem.";
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center py-10 px-6">
       {/* Icon lớn */}
-      <div className={`w-24 h-24 rounded-3xl ${config.bg} ${config.border} border-2 flex items-center justify-center mb-6 shadow-sm`}>
+      <div
+        className={`w-24 h-24 rounded-3xl ${config.bg} ${config.border} border-2 flex items-center justify-center mb-6 shadow-sm`}
+      >
         <FileIcon className={`w-12 h-12 ${config.color}`} />
       </div>
 
       {/* Label định dạng */}
-      <span className={`text-sm font-bold px-3 py-1 rounded-full ${config.bg} ${config.color} border ${config.border} mb-4`}>
+      <span
+        className={`text-sm font-bold px-3 py-1 rounded-full ${config.bg} ${config.color} border ${config.border} mb-4`}
+      >
         {config.label}
       </span>
 
@@ -180,7 +378,10 @@ const DownloadCard = ({ fileType, fileUrl, fileName, fileSize }) => {
       {/* Kích thước file */}
       {fileSize && (
         <p className="text-xs text-slate-400 mb-5">
-          Kích thước: <span className="font-semibold text-slate-600">{formatFileSize(fileSize)}</span>
+          Kích thước:{" "}
+          <span className="font-semibold text-slate-600">
+            {formatFileSize(fileSize)}
+          </span>
         </p>
       )}
 
@@ -188,10 +389,20 @@ const DownloadCard = ({ fileType, fileUrl, fileName, fileSize }) => {
       <button
         type="button"
         onClick={handleDownload}
-        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-brand-student hover:bg-brand-student-dark text-white font-semibold text-sm shadow-md shadow-brand-student/20 transition-all duration-200 active:scale-[0.98]"
+        disabled={isDownloading}
+        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-brand-student hover:bg-brand-student-dark text-white font-semibold text-sm shadow-md shadow-brand-student/20 transition-all duration-200 active:scale-[0.98] disabled:opacity-75 disabled:cursor-not-allowed cursor-pointer"
       >
-        <Download className="w-4 h-4" />
-        Tải về máy ({config.label})
+        {isDownloading ? (
+          <>
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Đang tải dữ liệu tệp...
+          </>
+        ) : (
+          <>
+            <Download className="w-4 h-4" />
+            Tải về máy ({config.label})
+          </>
+        )}
       </button>
     </div>
   );
@@ -206,6 +417,7 @@ const DownloadCard = ({ fileType, fileUrl, fileName, fileSize }) => {
  */
 const DocumentPreviewModal = ({ isOpen, onClose, document: doc }) => {
   const queryClient = useQueryClient();
+  const [isHeaderDownloading, setIsHeaderDownloading] = React.useState(false);
 
   // Gọi API chi tiết tài liệu khi modal mở — kích hoạt recordView trên Backend.
   // enabled: !!isOpen — chỉ fetch khi modal đang mở, tránh fetch thừa khi modal đóng.
@@ -218,11 +430,12 @@ const DocumentPreviewModal = ({ isOpen, onClose, document: doc }) => {
   useEffect(() => {
     if (!detailData || !doc?.id) return;
 
-    const newViewCount = detailData?.document?.view_count ?? detailData?.view_count;
-    if (typeof newViewCount !== 'number') return;
+    const newViewCount =
+      detailData?.document?.view_count ?? detailData?.view_count;
+    if (typeof newViewCount !== "number") return;
 
     // Cập nhật view_count trong tất cả các cache ['documents'] chứa tài liệu này
-    queryClient.setQueriesData({ queryKey: ['documents'] }, (oldData) => {
+    queryClient.setQueriesData({ queryKey: ["documents"] }, (oldData) => {
       if (!oldData) return oldData;
 
       const updateDoc = (d) => {
@@ -231,43 +444,63 @@ const DocumentPreviewModal = ({ isOpen, onClose, document: doc }) => {
       };
 
       if (Array.isArray(oldData)) return oldData.map(updateDoc);
-      if (oldData?.documents) return { ...oldData, documents: oldData.documents.map(updateDoc) };
+      if (oldData?.documents)
+        return { ...oldData, documents: oldData.documents.map(updateDoc) };
       return oldData;
     });
   }, [detailData, doc?.id, queryClient]);
 
   // Đóng modal khi nhấn phím Escape — UX chuẩn STUDYHUB_FE.md mục 7.3
   const handleKeyDown = useCallback(
-    (e) => { if (e.key === 'Escape') onClose(); },
+    (e) => {
+      if (e.key === "Escape") onClose();
+    },
     [onClose],
   );
   useEffect(() => {
     if (!isOpen) return;
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, handleKeyDown]);
 
   // Khóa cuộn trang khi modal mở
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
     }
-    return () => { document.body.style.overflow = ''; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [isOpen]);
 
   if (!isOpen || !doc) return null;
 
   // Lấy thông tin chi tiết từ API (ưu tiên), fallback về prop gốc từ DocumentCard
   const docDetail = detailData?.document || detailData || doc;
-  const fileUrl   = getFileUrl(docDetail.file_url || doc.file_url);
-  const fileType  = (docDetail.file_type || doc.file_type || '').toLowerCase().replace('.', '');
+  let fileUrl = getFileUrl(docDetail.file_url || doc.file_url);
+  const fileType = (docDetail.file_type || doc.file_type || "")
+    .toLowerCase()
+    .replace(".", "");
   const canPreview = isPreviewable(fileType);
 
+  // Chuẩn hóa cho PDF trên Cloudinary nếu chưa có đuôi .pdf
+  if (
+    fileUrl &&
+    fileType === "pdf" &&
+    fileUrl.includes("res.cloudinary.com") &&
+    !fileUrl.toLowerCase().endsWith(".pdf")
+  ) {
+    fileUrl = `${fileUrl}.pdf`;
+  }
+
   // Tên file để download (lấy từ phần cuối của file_url)
-  const rawUrl    = docDetail.file_url || doc.file_url || '';
-  const fileName  = rawUrl.split('/').pop() || `tai-lieu.${fileType}`;
+  const rawUrl = docDetail.file_url || doc.file_url || "";
+  let fileName = rawUrl.split("/").pop() || `tai-lieu.${fileType}`;
+  if (fileType && !fileName.toLowerCase().endsWith(`.${fileType}`)) {
+    fileName = `${fileName}.${fileType}`;
+  }
 
   return (
     // Backdrop — click ra ngoài đóng modal
@@ -286,7 +519,6 @@ const DocumentPreviewModal = ({ isOpen, onClose, document: doc }) => {
 
       {/* Modal Panel */}
       <div className="relative z-10 bg-white w-full sm:max-w-4xl max-h-[95dvh] sm:max-h-[90vh] rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200">
-
         {/* ─── Header ──────────────────────────────────────────────── */}
         <div className="flex items-start gap-3 px-5 py-4 border-b border-slate-100 shrink-0">
           {/* Icon loại nghiệp vụ */}
@@ -301,13 +533,13 @@ const DocumentPreviewModal = ({ isOpen, onClose, document: doc }) => {
             </h2>
             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
               <Badge variant="type" value={doc.document_type} size="sm" />
-              {doc.visibility && doc.visibility !== 'PUBLIC' && (
+              {doc.visibility && doc.visibility !== "PUBLIC" && (
                 <Badge variant="visibility" value={doc.visibility} size="sm" />
               )}
               {(doc.subject?.name || doc.subject_code) && (
                 <span className="text-[11px] font-semibold text-slate-500 px-2 py-0.5 rounded-md bg-slate-100">
                   {doc.subject?.code || doc.subject_code}
-                  {doc.subject?.name ? ` · ${doc.subject.name}` : ''}
+                  {doc.subject?.name ? ` · ${doc.subject.name}` : ""}
                 </span>
               )}
             </div>
@@ -320,14 +552,16 @@ const DocumentPreviewModal = ({ isOpen, onClose, document: doc }) => {
               <Eye className="w-3.5 h-3.5" />
               <span className="font-medium">
                 {isLoading
-                  ? '...'
+                  ? "..."
                   : formatCount(docDetail?.view_count ?? doc?.view_count ?? 0)}
               </span>
             </div>
             {/* Like count */}
             <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-400">
               <Heart className="w-3.5 h-3.5" />
-              <span className="font-medium">{formatCount(doc.like_count || 0)}</span>
+              <span className="font-medium">
+                {formatCount(doc.like_count || 0)}
+              </span>
             </div>
 
             {/* Nút mở tab mới (chỉ khi có fileUrl) */}
@@ -344,17 +578,29 @@ const DocumentPreviewModal = ({ isOpen, onClose, document: doc }) => {
               </a>
             )}
 
-            {/* Nút tải về (chỉ khi có fileUrl) */}
+            {/* Nút tải về header */}
             {fileUrl && (
-              <a
-                href={fileUrl}
-                download={fileName}
-                className="p-2 rounded-xl text-slate-400 hover:text-brand-student hover:bg-slate-100 transition-colors"
+              <button
+                type="button"
+                onClick={() =>
+                  downloadFileSmart(
+                    fileUrl,
+                    fileName,
+                    fileType,
+                    setIsHeaderDownloading,
+                  )
+                }
+                disabled={isHeaderDownloading}
+                className="p-2 rounded-xl text-slate-400 hover:text-brand-student hover:bg-slate-100 transition-colors cursor-pointer disabled:opacity-50"
                 title="Tải về máy"
                 aria-label="Tải tài liệu về máy"
               >
-                <Download className="w-4 h-4" />
-              </a>
+                {isHeaderDownloading ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-brand-student" />
+                ) : (
+                  <Download className="w-4 h-4" />
+                )}
+              </button>
             )}
 
             {/* Nút đóng modal */}
@@ -373,7 +619,7 @@ const DocumentPreviewModal = ({ isOpen, onClose, document: doc }) => {
         {doc.owner && (
           <div className="px-5 py-2 border-b border-slate-100 flex items-center gap-2 text-xs text-slate-500 shrink-0 bg-slate-50/60">
             <span className="font-semibold text-slate-700">
-              {doc.owner.full_name || doc.owner.username || 'Người dùng'}
+              {doc.owner.full_name || doc.owner.username || "Người dùng"}
             </span>
             <span className="text-slate-300">•</span>
             <span>{formatDate(doc.created_at)}</span>
@@ -393,7 +639,9 @@ const DocumentPreviewModal = ({ isOpen, onClose, document: doc }) => {
             <div className="flex-1 flex items-center justify-center py-16">
               <div className="flex flex-col items-center gap-3">
                 <Loader2 className="w-8 h-8 text-brand-student animate-spin" />
-                <p className="text-sm text-slate-500 font-medium">Đang tải thông tin tài liệu...</p>
+                <p className="text-sm text-slate-500 font-medium">
+                  Đang tải thông tin tài liệu...
+                </p>
               </div>
             </div>
           ) : !fileUrl ? (
@@ -401,13 +649,19 @@ const DocumentPreviewModal = ({ isOpen, onClose, document: doc }) => {
             <div className="flex-1 flex items-center justify-center py-16">
               <div className="flex flex-col items-center gap-2 text-slate-400">
                 <AlertCircle className="w-10 h-10" />
-                <p className="text-sm font-medium">Tài liệu này không có file đính kèm.</p>
+                <p className="text-sm font-medium">
+                  Tài liệu này không có file đính kèm.
+                </p>
               </div>
             </div>
           ) : canPreview ? (
             // PDF / Hình ảnh — Nhúng iframe xem trực tiếp
             <div className="flex-1 min-h-0 p-4 flex flex-col">
-              <PreviewIframe fileUrl={fileUrl} title={doc.title} />
+              <PreviewIframe
+                fileUrl={fileUrl}
+                title={doc.title}
+                fileType={fileType}
+              />
             </div>
           ) : (
             // DOCX / PPTX / ZIP — Download Card với hướng dẫn

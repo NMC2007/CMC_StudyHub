@@ -89,8 +89,8 @@ export const useUploadDocument = () => {
     mutationFn: uploadDocument,
     onSuccess: () => {
       toast.success('Tải lên tài liệu thành công!');
-      qc.invalidateQueries({ queryKey: ['documents', 'my'] });
-      qc.invalidateQueries({ queryKey: ['documents', 'search'] });
+      qc.invalidateQueries({ queryKey: ['documents'] });
+      qc.invalidateQueries({ queryKey: ['groups', 'documents'] });
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || 'Tải lên thất bại. Vui lòng thử lại.');
@@ -104,8 +104,8 @@ export const useUpdateDocument = () => {
     mutationFn: ({ id, body }) => updateDocument(id, body),
     onSuccess: (_, { id }) => {
       toast.success('Cập nhật tài liệu thành công!');
-      qc.invalidateQueries({ queryKey: ['documents', 'my'] });
-      qc.invalidateQueries({ queryKey: ['documents', 'detail', id] });
+      qc.invalidateQueries({ queryKey: ['documents'] });
+      qc.invalidateQueries({ queryKey: ['groups', 'documents'] });
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || 'Cập nhật thất bại.');
@@ -117,10 +117,49 @@ export const useSoftDeleteDocument = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: softDeleteDocument,
-    onSuccess: () => {
+    onSuccess: (_, deletedId) => {
       toast.success('Đã chuyển tài liệu vào Thùng rác.');
-      qc.invalidateQueries({ queryKey: ['documents', 'my'] });
-      qc.invalidateQueries({ queryKey: ['documents', 'trash'] });
+
+      // 1. Cập nhật cache tức thì (Optimistic UI removal) — Loại bỏ tài liệu vừa xóa khỏi tất cả danh sách đang hiển thị
+      qc.setQueriesData({ queryKey: ['documents'] }, (oldData) => {
+        if (!oldData) return oldData;
+        if (Array.isArray(oldData)) {
+          return oldData.filter((doc) => doc.id !== deletedId);
+        }
+        if (oldData?.documents) {
+          const newDocs = oldData.documents.filter((doc) => doc.id !== deletedId);
+          const newTotal = oldData.pagination
+            ? Math.max(0, oldData.pagination.total - 1)
+            : oldData.pagination;
+          return {
+            ...oldData,
+            documents: newDocs,
+            pagination: oldData.pagination
+              ? { ...oldData.pagination, total: newTotal }
+              : oldData.pagination,
+          };
+        }
+        return oldData;
+      });
+
+      qc.setQueriesData({ queryKey: ['groups', 'documents'] }, (oldData) => {
+        if (!oldData || !oldData.documents) return oldData;
+        const newDocs = oldData.documents.filter((doc) => doc.id !== deletedId);
+        const newTotal = oldData.pagination
+          ? Math.max(0, oldData.pagination.total - 1)
+          : oldData.pagination;
+        return {
+          ...oldData,
+          documents: newDocs,
+          pagination: oldData.pagination
+            ? { ...oldData.pagination, total: newTotal }
+            : oldData.pagination,
+        };
+      });
+
+      // 2. Invalidate tất cả query liên quan để đồng bộ hoàn hảo với Server
+      qc.invalidateQueries({ queryKey: ['documents'] });
+      qc.invalidateQueries({ queryKey: ['groups', 'documents'] });
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || 'Xóa thất bại.');
@@ -132,10 +171,24 @@ export const useRestoreDocument = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: restoreDocument,
-    onSuccess: () => {
+    onSuccess: (_, restoredId) => {
       toast.success('Đã khôi phục tài liệu thành công!');
-      qc.invalidateQueries({ queryKey: ['documents', 'trash'] });
-      qc.invalidateQueries({ queryKey: ['documents', 'my'] });
+
+      // Cập nhật ngay trong cache trash để xoá khỏi tab Thùng rác
+      qc.setQueriesData({ queryKey: ['documents', 'trash'] }, (oldData) => {
+        if (!oldData || !oldData.documents) return oldData;
+        const newDocs = oldData.documents.filter((doc) => doc.id !== restoredId);
+        return {
+          ...oldData,
+          documents: newDocs,
+          pagination: oldData.pagination
+            ? { ...oldData.pagination, total: Math.max(0, oldData.pagination.total - 1) }
+            : oldData.pagination,
+        };
+      });
+
+      qc.invalidateQueries({ queryKey: ['documents'] });
+      qc.invalidateQueries({ queryKey: ['groups', 'documents'] });
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || 'Khôi phục thất bại.');

@@ -7,19 +7,35 @@
  */
 
 import fs from "fs";
+import { v2 as cloudinary } from "cloudinary";
 import { AppDataSource } from "#config/db.js";
 
 /**
- * Xóa file vật lý khỏi ổ cứng (dùng cho rollback khi lỗi DB hoặc validation).
- * @param {string} filePath - Đường dẫn tuyệt đối tới file cần xóa
+ * Xóa file (dùng cho rollback khi lỗi DB hoặc validation).
+ * Hỗ trợ cả file vật lý trên ổ cứng và file đã upload lên Cloudinary.
+ * @param {string|Object} fileOrPath - Đường dẫn tuyệt đối tới file cần xóa hoặc Multer req.file object
  */
-export const cleanupFile = async (filePath) => {
-    if (!filePath) return;
+export const cleanupFile = async (fileOrPath) => {
+    if (!fileOrPath) return;
     try {
-        await fs.promises.unlink(filePath);
+        // Trường hợp 1: Truyền vào Multer file object của Cloudinary
+        if (typeof fileOrPath === "object" && fileOrPath.filename && fileOrPath.path?.startsWith("http")) {
+            const resourceType = fileOrPath.path.includes("/raw/upload/") ? "raw" : "image";
+            await cloudinary.uploader.destroy(fileOrPath.filename, { resource_type: resourceType });
+            return;
+        }
+        // Trường hợp 2: Truyền vào chuỗi URL Cloudinary
+        if (typeof fileOrPath === "string" && (fileOrPath.startsWith("http://") || fileOrPath.startsWith("https://"))) {
+            return;
+        }
+        // Trường hợp 3: File vật lý trên ổ cứng cục bộ
+        const targetPath = typeof fileOrPath === "object" ? fileOrPath.path : fileOrPath;
+        if (targetPath && !targetPath.startsWith("http")) {
+            await fs.promises.unlink(targetPath);
+        }
     } catch (err) {
         if (err.code !== "ENOENT") {
-            console.warn(`⚠️ [Cleanup Warning] Không thể dọn dẹp file rác: ${filePath}`, err.message);
+            console.warn(`⚠️ [Cleanup Warning] Không thể dọn dẹp file rác:`, err.message);
         }
     }
 };

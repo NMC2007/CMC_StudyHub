@@ -67,7 +67,7 @@ export const uploadDocument = async (user, file, body) => {
     const validation = validateUploadDocumentRequest(body);
     if (!validation.isValid) {
         // Dọn dẹp file đã upload nếu validate thất bại
-        await cleanupFile(file.path);
+        await cleanupFile(file);
         return {
             statusCode: 400,
             message: "Dữ liệu upload không hợp lệ.",
@@ -77,13 +77,13 @@ export const uploadDocument = async (user, file, body) => {
     }
 
     // Bước 3 & 4: UPLOAD GUARD — Kiểm tra quyền nghiệp vụ cho STUDENT và xác minh môn học
-    const guardResult = await validateStudentUploadContext(user, body, file.path);
+    const guardResult = await validateStudentUploadContext(user, body, file);
     if (!guardResult.isValid) {
         return guardResult.error;
     }
 
     // Bước 5: Chuẩn bị dữ liệu tài liệu và lưu vào DB
-    // Phòng thủ: nếu lưu DB thất bại, tự động xóa file vật lý
+    // Phòng thủ: nếu lưu DB thất bại, tự động xóa file
     let savedDocument;
     try {
         const fileExtension = path.extname(file.originalname).toLowerCase().replace(".", "");
@@ -92,7 +92,7 @@ export const uploadDocument = async (user, file, body) => {
             description: body.description ? String(body.description).trim() : null,
             document_type: body.document_type ? String(body.document_type).trim().toUpperCase() : null,
             visibility: body.visibility ? String(body.visibility).trim().toUpperCase() : "PUBLIC",
-            file_url: `/uploads/documents/${file.filename}`,
+            file_url: file.path,
             file_size: file.size,
             file_type: fileExtension,
             // Gán Foreign Key theo ID
@@ -105,8 +105,8 @@ export const uploadDocument = async (user, file, body) => {
 
         savedDocument = await saveDocument(docData);
     } catch (dbError) {
-        // Rollback: Xóa file vật lý nếu lưu DB thất bại
-        await cleanupFile(file.path);
+        // Rollback: Xóa file nếu lưu DB thất bại
+        await cleanupFile(file);
         throw dbError;
     }
 
