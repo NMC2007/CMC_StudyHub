@@ -250,6 +250,7 @@ export default function LecturerDashboard() {
                 key={group.id}
                 group={group}
                 onViewDetail={(g) => navigate(`/groups/${g.id}`)}
+                onManageMembers={(g) => navigate(`/groups/${g.id}?tab=members`)}
               />
             ))}
           </div>

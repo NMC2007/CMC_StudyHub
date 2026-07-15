@@ -77,7 +77,7 @@ const GroupCard = ({
         </div>
 
         {/* Owner Menu */}
-        {isOwner && (
+        {isOwner && (onManageMembers || onDisband) && (
           <div className="relative" ref={menuRef} onClick={(e) => e.stopPropagation()}>
             <button
               type="button"
