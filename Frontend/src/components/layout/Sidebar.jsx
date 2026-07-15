@@ -113,11 +113,11 @@ export default function Sidebar({ isOpen, onClose }) {
         {/* ── Header ── */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <div className="flex items-center gap-2.5">
-            <div
-              className={`w-8 h-8 rounded-lg ${theme.accentBg} flex items-center justify-center`}
-            >
-              <span className="text-white text-sm font-bold">S</span>
-            </div>
+            <img
+              src="/favicon.svg"
+              alt="StudyHub Logo"
+              className="w-8 h-8 object-contain"
+            />
             <span className="text-base font-bold text-text-primary">
               StudyHub
             </span>

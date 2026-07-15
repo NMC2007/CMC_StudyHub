@@ -39,11 +39,11 @@ Tài liệu này tổng hợp toàn bộ các API đang được cung cấp bở
 - **Lưu ý:** Trường `otp` là **bắt buộc** — phải là mã OTP 6 chữ số nhận được từ email sau khi gọi `/auth/send-otp`.
 - **Quy định Mã định danh (`code`) theo vai trò:**
   - `STUDENT`: Đúng chuẩn `^[A-Z]{3}[0-9]{5,7}$` — 3 chữ cái in hoa (mã ngành) + 5-7 chữ số (khóa + STT). VD: `BIT250052`.
-  - `LECTURER`: Linh hoạt `^[A-Z][A-Za-z0-9._-]{2,14}$` — tên viết tắt hoặc mã cán bộ, bắt đầu bằng chữ in hoa, 3-15 ký tự. VD: `NTSon`, `IT_GV01`.
+  - `LECTURER`: Linh hoạt `^[A-Z][A-Za-z0-9._-]{2,14}$` — tên viết tắt hoặc mã cán bộ, bắt đầu bằng chữ in hoa, 3-15 ký tự. VD: `NKSon`, `IT_GV01`.
   - `ADMIN`: Bắt đầu bằng `AD` + chữ/số, 6-15 ký tự. VD: `ADMIN01`.
 - **Quy định Email theo vai trò:**
   - `STUDENT`: `{code}@st.cmcu.edu.vn` (VD: `bit250052@st.cmcu.edu.vn`)
-  - `LECTURER`: `{code}@cmcu.edu.vn` (VD: `ntson@cmcu.edu.vn`)
+  - `LECTURER`: `{code}@cmcu.edu.vn` (VD: `NKSon@cmcu.edu.vn`)
 - **Body (`application/json`) — Sinh viên:**
   ```json
   {
@@ -64,10 +64,10 @@ Tài liệu này tổng hợp toàn bộ các API đang được cung cấp bở
 - **Body (`application/json`) — Giảng viên:**
   ```json
   {
-    "code": "NTSon",
+    "code": "NKSon",
     "full_name": "Nguyễn Thị Sơn",
-    "username": "ntson_gv",
-    "email": "ntson@cmcu.edu.vn",
+    "username": "NKSon_gv",
+    "email": "NKSon@cmcu.edu.vn",
     "phone": "0987654321",
     "dob": "1988-11-12",
     "password": "Giangvien@123",

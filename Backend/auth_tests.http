@@ -38,9 +38,9 @@ POST {{baseUrl}}/send-otp
 Content-Type: {{contentType}}
 
 {
-  "email": "ntson@cmcu.edu.vn",
-  "code": "NTSon",
-  "username": "ntson_gv",
+  "email": "NKSon@cmcu.edu.vn",
+  "code": "NKSon",
+  "username": "NKSon_gv",
   "phone": "0987654321",
   "full_name": "Nguyễn Thị Sơn"
 }
@@ -114,8 +114,8 @@ Content-Type: {{contentType}}
 {
   "code": "NKSon",
   "full_name": "Nguyễn Khánh Sơn",
-  "username": "ntson_gv",
-  "email": "ntson@cmcu.edu.vn",
+  "username": "NKSon_gv",
+  "email": "NKSon@cmcu.edu.vn",
   "phone": "0987654321",
   "dob": "1988-11-12",
   "password": "Giangvien@123",

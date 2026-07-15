@@ -107,8 +107,12 @@ export default function LoginPage() {
         <div className="bg-card rounded-2xl shadow-card p-8 border border-border">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-brand-student/10 mb-4">
-              <BookOpen className="w-7 h-7 text-brand-student" />
+            <div className="inline-flex items-center justify-center w-16 h-16 mb-4">
+              <img
+                src="/favicon.svg"
+                alt="StudyHub Logo"
+                className="w-full h-full object-contain"
+              />
             </div>
             <h1 className="text-2xl font-bold text-text-primary">
               Đăng nhập StudyHub

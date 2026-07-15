@@ -131,7 +131,7 @@ export default function RegisterPage() {
         setSendingOtp(false);
       }
     },
-    [step1SetErrorRef]
+    [step1SetErrorRef],
   );
 
   // Hàm gửi lại OTP
@@ -154,8 +154,7 @@ export default function RegisterPage() {
       { ...payloadWithoutConfirm, otp: trimmedOtp },
       {
         onError: (error) => {
-          const message =
-            error.response?.data?.message || "Đăng ký thất bại.";
+          const message = error.response?.data?.message || "Đăng ký thất bại.";
           const errors = error.response?.data?.errors || [];
           if (errors.some((e) => /otp/i.test(e))) {
             setOtpError(message);
@@ -163,7 +162,7 @@ export default function RegisterPage() {
             setOtpError(message);
           }
         },
-      }
+      },
     );
   }, [otpValue, fullPayload, registerMutation]);
 
@@ -187,8 +186,12 @@ export default function RegisterPage() {
         <div className="bg-card rounded-2xl shadow-card p-8 border border-border">
           {/* Header */}
           <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-brand-student/10 mb-4">
-              <BookOpen className="w-7 h-7 text-brand-student" />
+            <div className="inline-flex items-center justify-center w-16 h-16 mb-4">
+              <img
+                src="/favicon.svg"
+                alt="StudyHub Logo"
+                className="w-full h-full object-contain"
+              />
             </div>
             <h1 className="text-2xl font-bold text-text-primary">
               Tạo tài khoản StudyHub
@@ -200,21 +203,33 @@ export default function RegisterPage() {
 
           {/* Step indicator (3 bước) */}
           <div className="flex items-center gap-2 mb-6">
-            <StepIndicator step={1} currentStep={currentStep} label="Thông tin" />
+            <StepIndicator
+              step={1}
+              currentStep={currentStep}
+              label="Thông tin"
+            />
             <div className="flex-1 h-0.5 bg-border rounded-full overflow-hidden">
               <div
                 className="h-full bg-brand-student rounded-full transition-all duration-500"
                 style={{ width: currentStep >= 2 ? "100%" : "0%" }}
               />
             </div>
-            <StepIndicator step={2} currentStep={currentStep} label="Học thuật" />
+            <StepIndicator
+              step={2}
+              currentStep={currentStep}
+              label="Học thuật"
+            />
             <div className="flex-1 h-0.5 bg-border rounded-full overflow-hidden">
               <div
                 className="h-full bg-brand-student rounded-full transition-all duration-500"
                 style={{ width: currentStep >= 3 ? "100%" : "0%" }}
               />
             </div>
-            <StepIndicator step={3} currentStep={currentStep} label="Xác thực" />
+            <StepIndicator
+              step={3}
+              currentStep={currentStep}
+              label="Xác thực"
+            />
           </div>
 
           {/* Step Content */}
@@ -377,7 +392,11 @@ function Step1Form({
     prevCodeRef.current = codeValue;
     prevRoleRef.current = selectedRole;
 
-    if (codeValue !== undefined && codeValue.trim().length > 0 && selectedRole) {
+    if (
+      codeValue !== undefined &&
+      codeValue.trim().length > 0 &&
+      selectedRole
+    ) {
       const cleanCode = codeValue.trim().toLowerCase();
       const domain =
         selectedRole === "LECTURER" ? "@cmcu.edu.vn" : "@st.cmcu.edu.vn";
@@ -411,7 +430,7 @@ function Step1Form({
     }
     if (selectedRole === "LECTURER") {
       return {
-        placeholder: "VD: NTSon, IT_GV01",
+        placeholder: "VD: NKSon, IT_GV01",
         helperText: "Tên viết tắt hoặc mã cán bộ (3-15 ký tự)",
       };
     }
@@ -503,11 +522,16 @@ function Step1Form({
               ⚠️
             </span>
             <p className="text-xs text-amber-700 leading-relaxed">
-              <span className="font-semibold">Lưu ý quan trọng:</span> Mã định danh bạn nhập sẽ được dùng để tạo{" "}
+              <span className="font-semibold">Lưu ý quan trọng:</span> Mã định
+              danh bạn nhập sẽ được dùng để tạo{" "}
               <span className="font-mono font-semibold">
-                {selectedRole === "LECTURER" ? "@cmcu.edu.vn" : "@st.cmcu.edu.vn"}
+                {selectedRole === "LECTURER"
+                  ? "@cmcu.edu.vn"
+                  : "@st.cmcu.edu.vn"}
               </span>
-              . Vui lòng nhập <span className="font-semibold">chính xác</span> mã của bạn để đảm bảo nhận được mã xác thực khi kích hoạt tài khoản.
+              . Vui lòng nhập <span className="font-semibold">chính xác</span>{" "}
+              mã của bạn để đảm bảo nhận được mã xác thực khi kích hoạt tài
+              khoản.
             </p>
           </div>
         )}
@@ -516,7 +540,9 @@ function Step1Form({
       {/* Email — readOnly, tự động điền theo code + role */}
       <Input
         label="Email"
-        placeholder={selectedRole ? "Tự động điền sau khi nhập mã" : "email@example.com"}
+        placeholder={
+          selectedRole ? "Tự động điền sau khi nhập mã" : "email@example.com"
+        }
         type="email"
         icon={Mail}
         required
@@ -655,7 +681,14 @@ const RoleCard = forwardRef(
 );
 RoleCard.displayName = "RoleCard";
 
-function Step2Form({ role, onBack, onSubmit, isPending, submitLabel, submitIcon: SubmitIcon }) {
+function Step2Form({
+  role,
+  onBack,
+  onSubmit,
+  isPending,
+  submitLabel,
+  submitIcon: SubmitIcon,
+}) {
   const isStudent = role === "STUDENT";
   const schema = isStudent
     ? registerStep2StudentSchema
@@ -778,7 +811,10 @@ function Step3OtpForm({
   // Xử lý paste mã OTP
   const handlePaste = (e) => {
     e.preventDefault();
-    const pastedData = e.clipboardData.getData("text").replace(/[^0-9]/g, "").slice(0, 6);
+    const pastedData = e.clipboardData
+      .getData("text")
+      .replace(/[^0-9]/g, "")
+      .slice(0, 6);
     if (pastedData) {
       setOtpValue(pastedData);
       const focusIndex = Math.min(pastedData.length, 5);
@@ -843,7 +879,8 @@ function Step3OtpForm({
 
       {/* Helper text */}
       <p className="text-xs text-text-muted text-center leading-relaxed">
-        Vui lòng kiểm tra hộp thư đến hoặc <span className="font-semibold">thư rác (spam)</span> của email trên.
+        Vui lòng kiểm tra hộp thư đến hoặc{" "}
+        <span className="font-semibold">thư rác (spam)</span> của email trên.
       </p>
 
       {/* Resend OTP button */}
@@ -867,8 +904,8 @@ function Step3OtpForm({
           {resendCooldown > 0
             ? `Gửi lại mã sau ${resendCooldown}s`
             : sendingOtp
-            ? "Đang gửi lại..."
-            : "Gửi lại mã OTP"}
+              ? "Đang gửi lại..."
+              : "Gửi lại mã OTP"}
         </button>
       </div>
 

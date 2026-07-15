@@ -88,7 +88,7 @@ export const registerStep1Schema = z.object({
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['code'],
-        message: 'Mã Giảng viên phải bắt đầu bằng chữ in hoa, chỉ chứa chữ cái, số và ký tự ._-, độ dài 3-15 ký tự (VD: NTSon, IT_GV01)',
+        message: 'Mã Giảng viên phải bắt đầu bằng chữ in hoa, chỉ chứa chữ cái, số và ký tự ._-, độ dài 3-15 ký tự (VD: NKSon, IT_GV01)',
       });
     }
   }

@@ -169,7 +169,7 @@ export const validateDob = (dob) => {
  * - STUDENT : Đúng chuẩn: 3 chữ cái in hoa (mã ngành) + 5-7 chữ số (VD: BIT250052)
  *             Regex: ^[A-Z]{3}[0-9]{5,7}$  |  Độ dài: 8-10 ký tự
  *
- * - LECTURER: Tên viết tắt hoặc mã cán bộ tự do (VD: NTSon, TranVanA, IT_GV01)
+ * - LECTURER: Tên viết tắt hoặc mã cán bộ tự do (VD: NKSon, TranVanA, IT_GV01)
  *             Bắt đầu bằng chữ cái in hoa, các ký tự sau có thể là chữ/số/._-
  *             Regex: ^[A-Z][A-Za-z0-9._-]{2,14}$  |  Độ dài: 3-15 ký tự
  *
@@ -204,7 +204,7 @@ export const validateUserCode = (code, role) => {
             return {
                 isValid: false,
                 message:
-                    "Mã Giảng viên phải bắt đầu bằng chữ cái in hoa, chỉ chứa chữ cái, số và ký tự ._-, độ dài 3-15 ký tự (VD: NTSon, IT_GV01).",
+                    "Mã Giảng viên phải bắt đầu bằng chữ cái in hoa, chỉ chứa chữ cái, số và ký tự ._-, độ dài 3-15 ký tự (VD: NKSon, IT_GV01).",
             };
         }
     } else if (role === "ADMIN") {
