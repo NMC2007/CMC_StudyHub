@@ -45,11 +45,13 @@ const app = express();
 // credentials: true → cho phép gửi cookie/token qua cross-origin request.
 app.use(cors({
     origin: (origin, callback) => {
-        const isLocalOrLAN = !origin ||
+        const isAllowedOrigin = !origin ||
             allowedOrigins.includes(origin) ||
+            /\.vercel\.app$/.test(origin) ||
+            /\.wangganh\.id\.vn$/.test(origin) ||
             /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}):\d{1,5}$/.test(origin);
 
-        if (isLocalOrLAN) {
+        if (isAllowedOrigin) {
             callback(null, true);
         } else {
             console.warn(`⚠️ [CORS Blocked] Origin bị từ chối: "${origin}". Vui lòng kiểm tra lại địa chỉ trong FRONTEND_BASE_URL (.env)`);
