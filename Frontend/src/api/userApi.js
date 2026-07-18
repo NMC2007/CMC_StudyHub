@@ -44,4 +44,3 @@ export const getAllUsers = (params) =>
  */
 export const searchUsers = (params) =>
   api.get('/users/search', { params });
-
