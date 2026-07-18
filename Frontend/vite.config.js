@@ -17,14 +17,20 @@ export default defineConfig({
   },
 
   // ==========================================
-  // CẤU HÌNH DEV SERVER (LAN TESTING)
+  // CẤU HÌNH DEV / PREVIEW SERVER (LAN & HOSTING)
   // ==========================================
-  // host: true → Vite lắng nghe trên 0.0.0.0, cho phép các thiết bị
-  //              khác trong mạng LAN truy cập qua http://<IP_LAN>:5173
-  // port: 5173  → Cố định cổng, tránh tự động đổi sang cổng khác
+  // host: true → Vite lắng nghe trên 0.0.0.0, cho phép các thiết bị/hosting truy cập
+  // allowedHosts: true → Cho phép tất cả các tên miền (Render, Vercel, LAN IP...)
+  // port: 5173  → Cố định cổng
   server: {
     host: true,
     port: 5173,
+    allowedHosts: true,
+  },
+  preview: {
+    host: true,
+    port: 4173,
+    allowedHosts: true,
   },
 
   // ==========================================
