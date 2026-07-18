@@ -62,12 +62,12 @@ export default function UploadToGroupModal({
       document_type: 'DOCUMENT',
       visibility: 'GROUP',
       subject_id: '',
-      cohort_code: '',
-      cohort_id: null,
-      faculty_code: '',
-      faculty_id: null,
-      major_code: '',
-      major_id: null,
+      cohort_code: isStudent ? user?.cohort_code || '' : '',
+      cohort_id: isStudent ? user?.cohort_id || null : null,
+      faculty_code: isStudent ? user?.faculty_code || '' : '',
+      faculty_id: isStudent ? user?.faculty_id || null : null,
+      major_code: isStudent ? user?.major_code || '' : '',
+      major_id: isStudent ? user?.major_id || null : null,
     },
   });
 
@@ -79,12 +79,12 @@ export default function UploadToGroupModal({
         document_type: 'DOCUMENT',
         visibility: 'GROUP',
         subject_id: '',
-        cohort_code: user?.cohort_code || '',
-        cohort_id: user?.cohort_id || null,
-        faculty_code: user?.faculty_code || '',
-        faculty_id: user?.faculty_id || null,
-        major_code: user?.major_code || '',
-        major_id: user?.major_id || null,
+        cohort_code: isStudent ? user?.cohort_code || '' : '',
+        cohort_id: isStudent ? user?.cohort_id || null : null,
+        faculty_code: isStudent ? user?.faculty_code || '' : '',
+        faculty_id: isStudent ? user?.faculty_id || null : null,
+        major_code: isStudent ? user?.major_code || '' : '',
+        major_id: isStudent ? user?.major_id || null : null,
       });
       setSelectedFile(null);
       setFileError('');
@@ -280,7 +280,7 @@ export default function UploadToGroupModal({
               faculty_code: errors.faculty_id ? errors.faculty_id.message : '',
               major_code: errors.major_id ? errors.major_id.message : '',
             }}
-            required={{ subject: true }}
+            required={true}
             disabled={uploadGroupMutation.isPending}
             showTitle={true}
             titleText="Phân loại học thuật & Môn học (*)"

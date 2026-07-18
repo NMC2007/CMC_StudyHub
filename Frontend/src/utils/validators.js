@@ -135,6 +135,12 @@ export const uploadDocumentSchema = z.object({
   subject_id: z.coerce
     .number({ required_error: 'Vui lòng chọn Môn học', invalid_type_error: 'Vui lòng chọn Môn học' })
     .min(1, 'Vui lòng chọn Môn học'),
+  cohort_id: z.coerce.number({ required_error: 'Vui lòng chọn Khóa học' }).min(1, 'Vui lòng chọn Khóa học'),
+  faculty_id: z.coerce.number({ required_error: 'Vui lòng chọn Khoa' }).min(1, 'Vui lòng chọn Khoa'),
+  major_id: z.coerce.number({ required_error: 'Vui lòng chọn Ngành' }).min(1, 'Vui lòng chọn Ngành'),
+  cohort_code: z.any().optional(),
+  faculty_code: z.any().optional(),
+  major_code: z.any().optional(),
 });
 
 export const updateDocumentSchema = uploadDocumentSchema
