@@ -262,7 +262,7 @@ export default function RegisterPage() {
                 handleSendOtp(mergedData);
               }}
               isPending={sendingOtp}
-              submitLabel="Gửi mã xác thực Email"
+              submitLabel="Xác thực Email"
               submitIcon={Mail}
             />
           )}
@@ -366,7 +366,6 @@ function Step1Form({
       username: "",
       code: "",
       email: "",
-      phone: "",
       dob: "",
       password: "",
       confirm_password: "",
@@ -558,26 +557,15 @@ function Step1Form({
         {...register("email")}
       />
 
-      {/* 2 columns: Phone + DOB */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-        <Input
-          label="Số điện thoại"
-          placeholder="0901234567"
-          icon={Phone}
-          required
-          autoComplete="tel"
-          error={errors.phone}
-          {...register("phone")}
-        />
-        <Input
-          label="Ngày sinh"
-          type="date"
-          icon={Calendar}
-          required
-          error={errors.dob}
-          {...register("dob")}
-        />
-      </div>
+      {/* DOB */}
+      <Input
+        label="Ngày sinh"
+        type="date"
+        icon={Calendar}
+        required
+        error={errors.dob}
+        {...register("dob")}
+      />
 
       {/* Password */}
       <Input

@@ -42,9 +42,6 @@ export const registerStep1Schema = z.object({
     .string()
     .min(1, 'Vui lòng nhập email')
     .email('Email không đúng định dạng'),
-  phone: z
-    .string()
-    .regex(/^(0|\+84)[0-9]{9}$/, 'Số điện thoại không hợp lệ (10 số, bắt đầu bằng 0)'),
   dob: z
     .string()
     .min(1, 'Vui lòng chọn ngày sinh')
