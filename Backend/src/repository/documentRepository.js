@@ -53,7 +53,7 @@ export const findDocumentById = async (id, includeDeleted = false, user = null) 
 
     if (user && user.id) {
         query.leftJoinAndSelect("doc.likes", "user_likes", "user_likes.user_id = :currUserId", { currUserId: user.id })
-             .leftJoinAndSelect("doc.bookmarks", "user_bookmarks", "user_bookmarks.user_id = :currUserId", { currUserId: user.id });
+            .leftJoinAndSelect("doc.bookmarks", "user_bookmarks", "user_bookmarks.user_id = :currUserId", { currUserId: user.id });
     }
 
     return await query.getOne();
@@ -94,7 +94,7 @@ export const searchDocumentsRepo = async (queryParams, user = null) => {
     // === Lọc và đính kèm cờ tương tác cá nhân (is_liked, is_bookmarked) của user ===
     if (user && user.id) {
         query.leftJoinAndSelect("doc.likes", "user_likes", "user_likes.user_id = :currUserId", { currUserId: user.id })
-             .leftJoinAndSelect("doc.bookmarks", "user_bookmarks", "user_bookmarks.user_id = :currUserId", { currUserId: user.id });
+            .leftJoinAndSelect("doc.bookmarks", "user_bookmarks", "user_bookmarks.user_id = :currUserId", { currUserId: user.id });
     }
 
     // === Lọc danh sách tài liệu đã đánh dấu (bookmarks) hoặc đã thích (likes) của user ===
@@ -232,7 +232,7 @@ export const findTrashDocumentsRepo = async (queryParams, user) => {
 
     if (user && user.id) {
         query.leftJoinAndSelect("doc.likes", "user_likes", "user_likes.user_id = :currUserId", { currUserId: user.id })
-             .leftJoinAndSelect("doc.bookmarks", "user_bookmarks", "user_bookmarks.user_id = :currUserId", { currUserId: user.id });
+            .leftJoinAndSelect("doc.bookmarks", "user_bookmarks", "user_bookmarks.user_id = :currUserId", { currUserId: user.id });
     }
 
     if (user.role !== "ADMIN") {

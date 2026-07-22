@@ -10,6 +10,7 @@
  *  - Chuẩn A11y: `role="dialog"`, `aria-modal="true"`.
  */
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 const sizeClasses = {
@@ -29,6 +30,7 @@ const Modal = ({
   footer = null,
   size = 'md',
   closeOnBackdrop = true,
+  hideHeader = false,
   className = '',
   bodyClassName = '',
 }) => {
@@ -52,9 +54,9 @@ const Modal = ({
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200"
       onClick={closeOnBackdrop ? onClose : undefined}
       role="dialog"
       aria-modal="true"
@@ -66,8 +68,8 @@ const Modal = ({
         } ${className}`.trim()}
         onClick={(e) => e.stopPropagation()} // Ngăn click bên trong modal bị lan ra backdrop
       >
-        {/* Header (nếu có title hoặc nút đóng) */}
-        {(title || onClose) && (
+        {/* Header (nếu có title hoặc nút đóng và không bị ẩn) */}
+        {!hideHeader && (title || onClose) && (
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
             <div className="flex items-center gap-2.5">
               {Icon && (
@@ -107,7 +109,8 @@ const Modal = ({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

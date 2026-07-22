@@ -90,3 +90,45 @@ Authorization: Bearer {{accessToken}}
 ### 4.1 Tìm kiếm user theo mã code hoặc tên
 GET {{baseUrl}}/users/search?q=BIT250052
 Authorization: Bearer {{accessToken}}
+
+
+### =========================================================================
+### 5. XEM TRANG CÁ NHÂN NGƯỜI DÙNG THEO ID (GET /api/v1/users/:id)
+### Lấy thông tin hồ sơ + danh sách tài liệu họ đăng tải (đã lọc Visibility)
+### =========================================================================
+
+### 5.1 Xem trang cá nhân thành công — Người dùng ID=2
+GET {{baseUrl}}/users/2
+Authorization: Bearer {{accessToken}}
+
+### 5.2 Xem trang cá nhân + Tìm kiếm tài liệu theo từ khóa
+GET {{baseUrl}}/users/2?q=bài%20tập
+Authorization: Bearer {{accessToken}}
+
+### 5.3 Xem trang cá nhân + Lọc theo loại tài liệu EXAM
+GET {{baseUrl}}/users/2?type=EXAM
+Authorization: Bearer {{accessToken}}
+
+### 5.4 Xem trang cá nhân + Phân trang (trang 2, mỗi trang 5 bản ghi)
+GET {{baseUrl}}/users/2?page=2&limit=5
+Authorization: Bearer {{accessToken}}
+
+### 5.5 Xem trang cá nhân + Tìm kiếm + Lọc loại kết hợp
+GET {{baseUrl}}/users/2?q=toán&type=DOCUMENT&page=1&limit=10
+Authorization: Bearer {{accessToken}}
+
+### 5.6 Thất bại — ID người dùng không tồn tại (Expect 404)
+GET {{baseUrl}}/users/9999
+Authorization: Bearer {{accessToken}}
+
+### 5.7 Thất bại — ID không hợp lệ (chuỗi ký tự) (Expect 400)
+GET {{baseUrl}}/users/abc
+Authorization: Bearer {{accessToken}}
+
+### 5.8 Thất bại — Không có Access Token (Expect 401)
+GET {{baseUrl}}/users/2
+
+### 5.9 Xem trang cá nhân của chính mình (Visibility = ALL)
+### Thay {YOUR_USER_ID} bằng ID của account đang dùng accessToken
+GET {{baseUrl}}/users/1
+Authorization: Bearer {{accessToken}}

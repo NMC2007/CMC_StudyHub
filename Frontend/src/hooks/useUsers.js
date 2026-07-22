@@ -6,10 +6,12 @@
  *  - `useProfile`: Lấy thông tin profile chi tiết của user đang đăng nhập.
  *  - `useUpdateProfile`: Mutation cập nhật họ tên, số điện thoại, ngày sinh + đồng bộ Zustand store.
  *  - `useUpdateAvatar`: Mutation tải lên ảnh đại diện mới + đồng bộ Zustand store.
+ *  - `useSearchUsers`: Query tìm kiếm người dùng theo từ khóa.
+ *  - `useUserProfileById`: Query lấy trang cá nhân người dùng theo ID kèm tài liệu đã đăng (dùng cho UserProfileModal).
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { getProfile, updateProfile, updateAvatar, searchUsers } from '#/api/userApi';
+import { getProfile, updateProfile, updateAvatar, searchUsers, getUserProfileById } from '#/api/userApi';
 import { useAuthStore } from '#/stores/useAuthStore';
 
 /**
@@ -89,3 +91,22 @@ export const useSearchUsers = (params, options = {}) => {
   });
 };
 
+/**
+ * Hook lấy thông tin trang cá nhân của người dùng theo ID, kèm tài liệu họ đã đăng tải.
+ * API chỉ được gọi khi userId hợp lệ (enabled: !!userId).
+ * Tài liệu PRIVATE/GROUP được lọc tự động phía Backend theo quyền của currentUser.
+ *
+ * @param {number|null} userId - ID của người dùng cần xem (null = không gọi API)
+ * @param {{ q?: string, type?: string, page?: number, limit?: number }} params - Bộ lọc tài liệu
+ */
+export const useUserProfileById = (userId, params = {}) => {
+  return useQuery({
+    queryKey: ['userProfile', userId, params],
+    queryFn: async () => {
+      const response = await getUserProfileById(userId, params);
+      return response.data?.data || { profile: null, documents: [], pagination: {} };
+    },
+    enabled: !!userId, // Chỉ gọi API khi userId có giá trị hợp lệ
+    staleTime: 60 * 1000, // 1 phút — cache dữ liệu profile
+  });
+};

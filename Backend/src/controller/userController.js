@@ -99,3 +99,33 @@ export const searchUsers = async (req, res, next) => {
         next(error);
     }
 };
+
+/**
+ * GET /api/v1/users/:id
+ * Lấy thông tin trang cá nhân của người dùng theo ID (kèm danh sách tài liệu họ đã đăng).
+ * Tài liệu PRIVATE và GROUP bị lọc theo quyền truy cập của người xem (currentUser).
+ * @access Private — Yêu cầu jwtFilter (mọi người dùng đã đăng nhập)
+ */
+export const getUserProfileById = async (req, res, next) => {
+    try {
+        const targetUserId = parseInt(req.params.id);
+
+        if (isNaN(targetUserId) || targetUserId <= 0) {
+            return res
+                .status(400)
+                .json(toAPIResponse(400, "ID người dùng không hợp lệ.", null, ["Invalid User ID"]));
+        }
+
+        const result = await userService.getUserProfileWithDocuments(
+            targetUserId,
+            req.user,
+            req.query
+        );
+
+        return res
+            .status(result.statusCode)
+            .json(toAPIResponse(result.statusCode, result.message, result.data, result.errors));
+    } catch (error) {
+        next(error);
+    }
+};

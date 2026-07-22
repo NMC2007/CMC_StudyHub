@@ -13,8 +13,10 @@ import {
     updateUserById,
     findAllUsersProfile,
 } from "#repository/userRepository.js";
+import { searchDocumentsRepo } from "#repository/documentRepository.js";
 import { validateUpdateProfileRequest } from "#models/dto/request/UpdateProfileRequestDTO.js";
 import { toUserResponse } from "#models/dto/response/UserResponseDTO.js";
+import { toDocumentListResponse } from "#models/dto/response/DocumentResponseDTO.js";
 import { deleteRefreshTokensByUserId } from "#repository/authRepository.js";
 import { cleanupFile } from "#utils/uploadGuard.js";
 
@@ -232,6 +234,64 @@ export const updateUserStatus = async (userId, status) => {
         statusCode: 200,
         message: `Cập nhật trạng thái tài khoản sang '${normalizedStatus}' thành công!`,
         data: toUserResponse(updatedUser),
+        errors: null,
+    };
+};
+
+/**
+ * Lấy thông tin trang cá nhân của người dùng bất kỳ dựa trên ID,
+ * kèm danh sách tài liệu họ đã đăng tải (đã lọc theo quyền truy cập Visibility).
+ *
+ * Luồng Visibility Filter (theo người xem - currentUser):
+ *  - PUBLIC: Luôn hiển thị.
+ *  - PRIVATE: Chỉ chủ sở hữu hoặc ADMIN thấy được (mặc định repository đã xử lý).
+ *  - GROUP: Chỉ hiển thị nếu người xem là thành viên hoặc chủ sở hữu của nhóm chứa tài liệu đó.
+ *
+ * @param {number} targetUserId - ID của người dùng cần xem
+ * @param {Object} currentUser - Thông tin JWT của người đang gọi API (req.user)
+ * @param {Object} queryParams - Query params từ request ({ q, type, page, limit })
+ * @returns {Promise<{ statusCode: number, message: string, data: Object|null, errors: string[]|null }>}
+ */
+export const getUserProfileWithDocuments = async (targetUserId, currentUser, queryParams) => {
+    // Bước 1: Kiểm tra người dùng mục tiêu có tồn tại không
+    const targetUser = await findUserProfileById(targetUserId);
+    if (!targetUser) {
+        return {
+            statusCode: 404,
+            message: "Người dùng không tồn tại hoặc tài khoản đã bị xóa.",
+            data: null,
+            errors: ["User Not Found"],
+        };
+    }
+
+    // Bước 2: Lấy danh sách tài liệu của người dùng mục tiêu
+    // - owner_id: Lọc tài liệu của đúng người dùng đó
+    // - include_group_accessible: Cho phép hiển thị tài liệu GROUP mà currentUser có quyền truy cập
+    // - Tài liệu PRIVATE của owner sẽ bị ẩn trừ khi currentUser là chính owner hoặc ADMIN (xử lý trong Repository)
+    const docsQueryParams = {
+        owner_id: targetUserId,
+        include_group_accessible: "true",
+        q: queryParams.q || undefined,
+        type: queryParams.type || queryParams.document_type || undefined,
+        page: queryParams.page || 1,
+        limit: queryParams.limit || 10,
+    };
+
+    const docsResult = await searchDocumentsRepo(docsQueryParams, currentUser);
+
+    return {
+        statusCode: 200,
+        message: "Lấy thông tin trang cá nhân thành công.",
+        data: {
+            profile: toUserResponse(targetUser),
+            documents: toDocumentListResponse(docsResult.documents, currentUser?.id || null),
+            pagination: {
+                total: docsResult.total,
+                page: docsResult.page,
+                totalPages: docsResult.totalPages,
+                limit: Math.max(1, Math.min(100, parseInt(queryParams.limit) || 10)),
+            },
+        },
         errors: null,
     };
 };

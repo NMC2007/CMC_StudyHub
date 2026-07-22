@@ -32,6 +32,7 @@ import ConfirmModal from "#/components/ui/ConfirmModal";
 import EditDocumentModal from "#/components/document/EditDocumentModal";
 import ShareDocToGroupModal from "#/components/document/ShareDocToGroupModal";
 import DocumentPreviewModal from "#/components/document/DocumentPreviewModal";
+import UserProfileModal from "#/components/user/UserProfileModal";
 import {
   useToggleLike,
   useToggleBookmark,
@@ -46,6 +47,7 @@ const DocumentCard = ({
   onDelete,
   onLikeToggle,
   onBookmarkToggle,
+  disableProfileClick = false,
   className = "",
 }) => {
   if (!doc) return null;
@@ -81,6 +83,8 @@ const DocumentCard = ({
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   // State mở DocumentPreviewModal — thay thế window.open để sửa lỗi 404 & ghi nhận view_count
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  // State mở UserProfileModal khi click vào người đăng
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const softDeleteMutation = useSoftDeleteDocument();
 
   const handleInternalDelete = () => {
@@ -323,7 +327,28 @@ const DocumentCard = ({
       </div>
 
       {/* ─── Uploader & Date Row (Phía dưới tag, trên tiêu đề tài liệu) ─── */}
-      <div className="flex items-center gap-2.5 text-xs text-slate-500 -mt-1 pb-1">
+      {/* Click vào khu vực avatar/tên mở UserProfileModal của người đăng */}
+      <div
+        className={`flex items-center gap-2.5 text-xs text-slate-500 -mt-1 pb-1 ${
+          disableProfileClick 
+            ? "" 
+            : "cursor-pointer hover:bg-slate-50 rounded-xl p-1 -ml-1 transition-colors"
+        }`}
+        onClick={(e) => {
+          e.stopPropagation(); // Ngăn kích hoạt DocumentPreviewModal bên ngoài
+          if (!disableProfileClick && doc.owner?.id) setIsProfileModalOpen(true);
+        }}
+        title={disableProfileClick ? "" : `Xem trang cá nhân của ${doc.owner?.full_name || doc.owner?.username || "người dùng này"}`}
+        role={disableProfileClick ? "presentation" : "button"}
+        tabIndex={disableProfileClick ? -1 : 0}
+        onKeyDown={(e) => {
+          if (!disableProfileClick && (e.key === "Enter" || e.key === " ") && doc.owner?.id) {
+            e.stopPropagation();
+            setIsProfileModalOpen(true);
+          }
+        }}
+        aria-label={disableProfileClick ? undefined : `Xem trang cá nhân của ${doc.owner?.full_name || doc.owner?.username || "người dùng này"}`}
+      >
         <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 shrink-0 overflow-hidden relative">
           {doc.owner?.avatar ? (
             <img
@@ -341,7 +366,7 @@ const DocumentCard = ({
         </div>
         <div className="flex flex-col min-w-0 leading-tight">
           <div className="flex items-center gap-1.5">
-            <span className="font-semibold text-slate-700 truncate">
+            <span className="font-semibold text-slate-700 truncate hover:underline hover:text-brand-student transition-colors">
               {doc.owner?.full_name || doc.owner?.username || "Người dùng"}
             </span>
             <span className="text-slate-300">•</span>
@@ -511,6 +536,17 @@ const DocumentCard = ({
             isOpen={isPreviewModalOpen}
             onClose={() => setIsPreviewModalOpen(false)}
             document={doc}
+          />
+        </div>
+      )}
+
+      {/* Modal Trang cá nhân người đăng tài liệu — mở khi click avatar/tên */}
+      {isProfileModalOpen && doc.owner?.id && (
+        <div onClick={(e) => e.stopPropagation()}>
+          <UserProfileModal
+            isOpen={isProfileModalOpen}
+            onClose={() => setIsProfileModalOpen(false)}
+            userId={doc.owner.id}
           />
         </div>
       )}

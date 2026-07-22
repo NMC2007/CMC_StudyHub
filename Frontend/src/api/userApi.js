@@ -44,3 +44,13 @@ export const getAllUsers = (params) =>
  */
 export const searchUsers = (params) =>
   api.get('/users/search', { params });
+
+/**
+ * Lấy thông tin trang cá nhân của người dùng theo ID, kèm danh sách tài liệu họ đăng tải.
+ * Tài liệu PRIVATE/GROUP bị lọc theo quyền truy cập của người xem hiện tại.
+ * @param {number} id - ID của người dùng mục tiêu
+ * @param {{ q?: string, type?: string, page?: number, limit?: number }} params - Bộ lọc tài liệu
+ * @returns Promise — data.data: { profile, documents, pagination }
+ */
+export const getUserProfileById = (id, params) =>
+  api.get(`/users/${id}`, { params });
